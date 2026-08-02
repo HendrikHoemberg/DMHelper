@@ -385,7 +385,7 @@
       }
 
       lastFocused = link;
-      const card = link.closest('.statblock-card');
+      const card = link.closest('.ref-card');
 
       const inject = () => {
         if (card) card.style.viewTransitionName = '';

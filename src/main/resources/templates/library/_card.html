@@ -1,23 +1,30 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="statblock-card" th:fragment="card(sb)">
+<div class="ref-card" th:fragment="card(sb)">
     <!-- A plain link: the side sheet is an enhancement layered on top of it by
          ui-elevation.js, and the full page still works without JS. -->
-    <div class="library-card__header">
-        <h3 class="library-card__title">
+    <div class="ref-card__header">
+        <h3 class="ref-card__title">
             <a th:href="@{/library/statblocks/{id}(id=${sb.id})}" th:text="${sb.name}"
                data-statblock-link>Name</a>
         </h3>
-        <span class="library-card__cr">CR <span class="u-num" th:text="${sb.cr}">1/4</span></span>
+        <span class="ref-card__cr">CR <span class="u-num" th:text="${sb.cr}">1/4</span></span>
     </div>
-    <div class="library-card__meta">
-        <span th:class="${sb.type == 'Celestial' or sb.type == 'Fey' or sb.type == 'Plant'} ? 'library-chip library-chip--success' : (${sb.type == 'Fiend' or sb.type == 'Undead' or sb.type == 'Aberration'} ? 'library-chip library-chip--danger' : (${sb.type == 'Dragon' or sb.type == 'Elemental' or sb.type == 'Giant'} ? 'library-chip library-chip--warning' : (${sb.type == 'Construct' or sb.type == 'Ooze'} ? 'library-chip library-chip--shield' : 'library-chip library-chip--accent')))"
-              th:text="${sb.type}">Type</span>
-        <span th:if="${sb.size != null}" th:text="${sb.size}"></span>
-        <span th:if="${sb.source.name() == 'SRD'}" class="library-chip library-chip--accent library-chip--source">SRD</span>
-        <span th:if="${sb.source.name() == 'CUSTOM'}" class="library-chip library-chip--success library-chip--source">Custom</span>
+    <div class="ref-card__meta">
+        <!-- Type tone is a decorative scan aid. The tone rides a data attribute so the
+             class list stays static: a BEM double underscore inside an expression trips
+             Thymeleaf's __…__ preprocessing. -->
+        <span class="ref-card__slot" th:text="${sb.type}"
+              th:attr="data-tone=${sb.type == 'Celestial' or sb.type == 'Fey' or sb.type == 'Plant'} ? 'success' : (${sb.type == 'Fiend' or sb.type == 'Undead' or sb.type == 'Aberration'} ? 'danger' : (${sb.type == 'Dragon' or sb.type == 'Elemental' or sb.type == 'Giant'} ? 'warning' : (${sb.type == 'Construct' or sb.type == 'Ooze'} ? 'shield' : 'accent')))">Type</span>
+        <span class="ref-card__slot" th:if="${sb.size != null}" th:text="${sb.size}">Size</span>
+        <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${sb})}"></th:block>
     </div>
-    <div class="card-actions u-mt-auto">
+    <p class="ref-card__summary">
+        <span>AC</span> <span class="u-num" th:text="${sb.ac}">15</span>
+        <span aria-hidden="true">·</span>
+        <span>HP</span> <span class="u-num" th:text="${sb.hp}">7 (2d6)</span>
+    </p>
+    <div class="ref-card__actions u-mt-auto">
         <th:block th:if="${sb.source.name() == 'SRD'}">
             <form th:hx-post="@{/library/statblocks/{id}/clone(id=${sb.id})}" hx-target="body" class="u-inline"
                   hx-disabled-elt="find button[type='submit']">
@@ -30,14 +37,14 @@
                 <button class="btn btn-ghost btn-xs"
                         th:hx-put="@{/library/statblocks/{id}/promote(id=${sb.id})}"
                         hx-confirm="Promote to global? It will be available in all campaigns."
-                        hx-target="closest .statblock-card"
+                        hx-target="closest .ref-card"
                         hx-swap="outerHTML"
                         hx-disabled-elt="this">Promote</button>
             </th:block>
             <button class="btn btn-danger btn-xs action-row__destructive"
                     th:hx-delete="@{/library/statblocks/{id}(id=${sb.id})}"
                     hx-confirm="Delete this statblock?"
-                    hx-target="closest .statblock-card"
+                    hx-target="closest .ref-card"
                     hx-swap="outerHTML"
                     hx-disabled-elt="this">Delete</button>
         </th:block>

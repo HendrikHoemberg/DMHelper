@@ -1,18 +1,23 @@
 <th:block th:fragment="condition-card(condition)">
-    <div class="card">
-        <h3 class="card-title" th:text="${condition.name}">Condition Name</h3>
-        <p class="card-text" th:text="${condition.description}">Description</p>
-        <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${condition})}"></th:block>
+    <div class="ref-card">
+        <h3 class="ref-card__title">
+            <a th:href="@{/library/conditions/{id}(id=${condition.id})}" th:text="${condition.name}">Condition Name</a>
+        </h3>
+        <div class="ref-card__meta">
+            <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${condition})}"></th:block>
+        </div>
+        <div class="ref-card__summary" th:utext="${condition.description}">Description</div>
+        <th:block th:replace="~{library/_provenance-fields :: provenance-line(entity=${condition})}"></th:block>
     </div>
 </th:block>
 
 <th:block th:fragment="condition-card-list">
-    <div class="card-grid" th:if="${conditions != null and !conditions.isEmpty()}">
-        <div th:each="c : ${conditions}" class="card">
-            <h3 class="card-title" th:text="${c.name}">Condition Name</h3>
-            <p class="card-text" th:text="${c.description}">Description</p>
-            <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${c})}"></th:block>
-        </div>
+    <div class="card-grid card-grid--library" th:if="${conditions != null and !conditions.isEmpty()}">
+        <th:block th:each="c : ${conditions}">
+            <th:block th:replace="~{library/_condition-card :: condition-card(condition=${c})}"></th:block>
+        </th:block>
     </div>
-    <div class="empty-state"><p>No conditions match your search.</p></div>
+    <div class="empty-state" th:if="${conditions == null or conditions.isEmpty()}">
+        <p>No conditions match your search.</p>
+    </div>
 </th:block>

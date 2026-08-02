@@ -1,22 +1,24 @@
 <th:block th:fragment="class-card(clz)">
-    <a class="card card-clickable" th:href="@{/library/classes/id/{id}(id=${clz.id})}">
-        <h3 class="card-title library-card__title" th:text="${clz.name}">Class Name</h3>
-        <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${clz})}"></th:block>
-    </a>
+    <div class="ref-card">
+        <h3 class="ref-card__title">
+            <a th:href="@{/library/classes/{key}(key=${clz.sourceKey})}" th:text="${clz.name}">Class Name</a>
+        </h3>
+        <div class="ref-card__meta">
+            <span class="ref-card__slot" th:if="${clz.hitDie != null}" th:text="'HD ' + ${clz.hitDie}">HD</span>
+            <span class="ref-card__slot" th:if="${clz.subclassOf != null}"
+                  th:text="'Subclass of ' + ${clz.subclassOf}">Subclass</span>
+            <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${clz})}"></th:block>
+        </div>
+        <div class="ref-card__summary" th:if="${clz.description != null}" th:utext="${clz.description}">Description</div>
+        <th:block th:replace="~{library/_provenance-fields :: provenance-line(entity=${clz})}"></th:block>
+    </div>
 </th:block>
 
 <th:block th:fragment="class-card-list">
-    <div class="card-grid" th:if="${classes != null and !classes.isEmpty()}">
-        <a th:each="c : ${classes}" class="card card-clickable"
-           th:href="@{/library/classes/__${c.sourceKey}__}">
-            <h3 class="card-title library-card__title" th:text="${c.name}">Class Name</h3>
-            <div class="badge-group library-card__meta">
-                <span class="badge badge-srd" th:text="${'HD: ' + c.hitDie}">HD</span>
-                <span class="badge badge-type" th:if="${c.subclassOf != null}"
-                      th:text="${'Subclass of ' + c.subclassOf}">Subclass</span>
-                <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${c})}"></th:block>
-            </div>
-        </a>
+    <div class="card-grid card-grid--library" th:if="${classes != null and !classes.isEmpty()}">
+        <th:block th:each="c : ${classes}">
+            <th:block th:replace="~{library/_class-card :: class-card(clz=${c})}"></th:block>
+        </th:block>
     </div>
     <div class="empty-state" th:if="${classes == null or classes.isEmpty()}">
         <p class="empty-state__title">No classes match your search.</p>

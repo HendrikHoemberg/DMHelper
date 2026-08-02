@@ -1,28 +1,25 @@
 <th:block th:fragment="equipment-card(item)">
-    <span th:text="${item.name}"></span>
+    <div class="ref-card">
+        <h3 class="ref-card__title">
+            <a th:href="@{/library/equipment/{id}(id=${item.id})}" th:text="${item.name}">Name</a>
+        </h3>
+        <div class="ref-card__meta">
+            <span class="ref-card__slot" th:if="${item.category != null}" th:text="${item.category}">Category</span>
+            <span class="ref-card__slot" th:if="${item.cost != null}" th:text="${item.cost}">Cost</span>
+            <span class="ref-card__slot" th:if="${item.weight != null}" th:text="${item.weight}">Weight</span>
+            <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${item})}"></th:block>
+        </div>
+        <div class="ref-card__summary" th:if="${item.description != null}" th:utext="${item.description}">Description</div>
+        <th:block th:replace="~{library/_provenance-fields :: provenance-line(entity=${item})}"></th:block>
+    </div>
 </th:block>
 
 <th:block th:fragment="equipment-card-list" th:with="cap=60">
-    <table class="equipment-table settle-in" th:if="${equipment != null and !equipment.isEmpty()}">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Category</th>
-                <th>Cost</th>
-                <th>Weight</th>
-                <th>Properties</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr th:each="e,iter : ${equipment}" th:if="${iter.index < cap}">
-                <td class="library-table__name" th:text="${e.name}">Name</td>
-                <td class="library-table__meta" th:text="${e.category}">Category</td>
-                <td th:text="${e.cost}">Cost</td>
-                <td class="library-table__meta" th:text="${e.weight}">Weight</td>
-                <td class="library-table__meta" th:text="${e.properties}">Properties</td>
-            </tr>
-        </tbody>
-    </table>
+    <div class="card-grid card-grid--library" th:if="${equipment != null and !equipment.isEmpty()}">
+        <th:block th:each="e,iter : ${equipment}" th:if="${iter.index < cap}">
+            <th:block th:replace="~{library/_equipment-card :: equipment-card(item=${e})}"></th:block>
+        </th:block>
+    </div>
     <th:block th:if="${equipment != null and equipment.size() > cap}"
               th:replace="~{library/_card :: more-results(shown=${cap}, total=${equipment.size()})}"></th:block>
     <div class="empty-state" th:if="${equipment == null or equipment.isEmpty()}">

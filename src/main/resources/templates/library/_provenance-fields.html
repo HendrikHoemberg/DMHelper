@@ -1,5 +1,13 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+<th:block th:fragment="provenance-line(entity)">
+    <div class="ref-card__provenance" th:if="${entity.provenance != null}">
+        <span th:if="${entity.provenance.sourceTitle != null}" th:text="${entity.provenance.sourceTitle}"></span>
+        <span th:if="${entity.provenance.editionVersion != null}" th:text="${entity.provenance.editionVersion}"></span>
+        <span th:if="${entity.provenance.sourceLocator != null}" th:text="${entity.provenance.sourceLocator}"></span>
+    </div>
+</th:block>
+
 <th:block th:fragment="provenance(entity)" th:if="${entity.provenance != null}">
     <details class="provenance-panel">
         <summary class="provenance-summary"><strong>Provenance</strong></summary>

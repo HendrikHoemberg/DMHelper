@@ -1,18 +1,22 @@
 <th:block th:fragment="rule-card(rule)">
-    <div class="card">
-        <h3 class="card-title" th:text="${rule.name}">Rule Name</h3>
-        <div class="card-text" th:utext="${#markdown.toHtml(rule.body)}">Description</div>
-        <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${rule})}"></th:block>
+    <div class="ref-card">
+        <h3 class="ref-card__title">
+            <a th:href="@{/library/rules/{id}(id=${rule.id})}" th:text="${rule.name}">Rule Name</a>
+        </h3>
+        <div class="ref-card__meta">
+            <span class="ref-card__slot" th:if="${rule.ruleset != null}" th:text="${rule.ruleset}">Ruleset</span>
+            <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${rule})}"></th:block>
+        </div>
+        <div class="ref-card__summary" th:utext="${#markdown.toHtml(rule.body)}">Body</div>
+        <th:block th:replace="~{library/_provenance-fields :: provenance-line(entity=${rule})}"></th:block>
     </div>
 </th:block>
 
 <th:block th:fragment="rule-card-list" th:with="cap=60">
-    <div class="card-grid" th:if="${rules != null and !rules.isEmpty()}">
-        <div th:each="r,iter : ${rules}" th:if="${iter.index < cap}" class="card">
-            <h3 class="card-title" th:text="${r.name}">Rule Name</h3>
-            <div class="card-text" th:utext="${#markdown.toHtml(r.body)}">Description</div>
-            <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${r})}"></th:block>
-        </div>
+    <div class="card-grid card-grid--library" th:if="${rules != null and !rules.isEmpty()}">
+        <th:block th:each="r,iter : ${rules}" th:if="${iter.index < cap}">
+            <th:block th:replace="~{library/_rule-card :: rule-card(rule=${r})}"></th:block>
+        </th:block>
     </div>
     <th:block th:if="${rules != null and rules.size() > cap}"
               th:replace="~{library/_card :: more-results(shown=${cap}, total=${rules.size()})}"></th:block>

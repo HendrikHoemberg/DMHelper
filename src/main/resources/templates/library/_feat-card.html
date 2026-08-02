@@ -1,26 +1,24 @@
 <th:block th:fragment="feat-card(feat)">
-    <div class="card">
-        <h3 class="card-title" th:text="${feat.name}">Feat Name</h3>
-        <div class="badge-group">
-            <span class="badge badge-srd" th:if="${feat.category != null}" th:text="${feat.category}">Category</span>
+    <div class="ref-card">
+        <h3 class="ref-card__title">
+            <a th:href="@{/library/feats/{id}(id=${feat.id})}" th:text="${feat.name}">Feat Name</a>
+        </h3>
+        <div class="ref-card__meta">
+            <span class="ref-card__slot" th:if="${feat.category != null}" th:text="${feat.category}">Category</span>
+            <span class="ref-card__slot" th:if="${feat.prerequisite != null}"
+                  th:text="'Prereq: ' + ${feat.prerequisite}">Prereq</span>
             <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${feat})}"></th:block>
         </div>
-        <p th:if="${feat.prerequisite != null}"><em th:text="${'Prerequisite: ' + feat.prerequisite}">Prerequisite</em></p>
-        <p class="card-text" th:utext="${#markdown.toHtml(feat.benefit)}">Benefit</p>
+        <div class="ref-card__summary" th:if="${feat.benefit != null}" th:utext="${#markdown.toHtml(feat.benefit)}">Benefit</div>
+        <th:block th:replace="~{library/_provenance-fields :: provenance-line(entity=${feat})}"></th:block>
     </div>
 </th:block>
 
 <th:block th:fragment="feat-card-list" th:with="cap=60">
-    <div class="card-grid" th:if="${feats != null and !feats.isEmpty()}">
-        <div th:each="f,iter : ${feats}" th:if="${iter.index < cap}" class="card">
-            <h3 class="card-title" th:text="${f.name}">Feat Name</h3>
-            <div class="badge-group">
-                <span class="badge badge-srd" th:if="${f.category != null}" th:text="${f.category}">Category</span>
-                <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${f})}"></th:block>
-            </div>
-            <p th:if="${f.prerequisite != null}"><em th:text="${'Prerequisite: ' + f.prerequisite}">Prerequisite</em></p>
-            <p class="card-text" th:utext="${#markdown.toHtml(f.benefit)}">Benefit</p>
-        </div>
+    <div class="card-grid card-grid--library" th:if="${feats != null and !feats.isEmpty()}">
+        <th:block th:each="f,iter : ${feats}" th:if="${iter.index < cap}">
+            <th:block th:replace="~{library/_feat-card :: feat-card(feat=${f})}"></th:block>
+        </th:block>
     </div>
     <th:block th:if="${feats != null and feats.size() > cap}"
               th:replace="~{library/_card :: more-results(shown=${cap}, total=${feats.size()})}"></th:block>

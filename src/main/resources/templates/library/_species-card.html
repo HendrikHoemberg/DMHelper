@@ -1,22 +1,25 @@
 <th:block th:fragment="species-card(species)">
-    <div class="card">
-        <h3 class="card-title" th:text="${species.name}">Species Name</h3>
-        <p th:if="${species.size != null}"><strong>Size:</strong> <span th:text="${species.size}">Size</span></p>
-        <p th:if="${species.speed != null}"><strong>Speed:</strong> <span th:text="${species.speed}">Speed</span></p>
-        <p th:if="${species.description != null}" class="card-text" th:utext="${#markdown.toHtml(species.description)}">Description</p>
-        <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${species})}"></th:block>
+    <div class="ref-card">
+        <h3 class="ref-card__title">
+            <a th:href="@{/library/species/{id}(id=${species.id})}" th:text="${species.name}">Species Name</a>
+        </h3>
+        <div class="ref-card__meta">
+            <span class="ref-card__slot" th:if="${species.size != null}" th:text="${species.size}">Size</span>
+            <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${species})}"></th:block>
+        </div>
+        <div class="ref-card__summary" th:if="${species.description != null}"
+             th:utext="${#markdown.toHtml(species.description)}">Description</div>
+        <th:block th:replace="~{library/_provenance-fields :: provenance-line(entity=${species})}"></th:block>
     </div>
 </th:block>
 
 <th:block th:fragment="species-card-list">
-    <div class="card-grid" th:if="${speciesList != null and !speciesList.isEmpty()}">
-        <div th:each="s : ${speciesList}" class="card">
-            <h3 class="card-title" th:text="${s.name}">Species Name</h3>
-            <p th:if="${s.size != null}"><strong>Size:</strong> <span th:text="${s.size}">Size</span></p>
-            <p th:if="${s.speed != null}"><strong>Speed:</strong> <span th:text="${s.speed}">Speed</span></p>
-            <p th:if="${s.description != null}" class="card-text" th:utext="${#markdown.toHtml(s.description)}">Description</p>
-            <th:block th:replace="~{library/_scope-badge :: scope-badge(entity=${s})}"></th:block>
-        </div>
+    <div class="card-grid card-grid--library" th:if="${speciesList != null and !speciesList.isEmpty()}">
+        <th:block th:each="s : ${speciesList}">
+            <th:block th:replace="~{library/_species-card :: species-card(species=${s})}"></th:block>
+        </th:block>
     </div>
-    <div class="empty-state"><p>No species match your search.</p></div>
+    <div class="empty-state" th:if="${speciesList == null or speciesList.isEmpty()}">
+        <p>No species match your search.</p>
+    </div>
 </th:block>

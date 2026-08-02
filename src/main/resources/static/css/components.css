@@ -376,6 +376,61 @@
   border-left-color: var(--state-success);
 }
 
+/* Visual asset cards: a map thumbnail, its references, and identifier styling. */
+.map-thumb {
+  display: block;
+  position: relative;
+  aspect-ratio: 3 / 2;
+  border-radius: var(--radius);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  overflow: hidden;
+  margin-bottom: var(--space-sm);
+}
+
+.map-thumb__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--color-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.map-thumb__label {
+  position: absolute;
+  left: var(--space-sm);
+  bottom: var(--space-sm);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+  color: var(--color-text);
+  font-size: var(--text-xs);
+}
+
+.map-references {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: var(--space-sm);
+}
+
+.detail-metadata__group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs) var(--space-xs);
+  padding: var(--space-xs);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+}
+
+.u-text-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
 .detail-description {
   color: var(--color-text-muted);
   font-size: var(--text-base);
@@ -504,7 +559,7 @@
 .search-bar select:focus { border-color: var(--border-strong); }
 
 .ref-card {
-  background: var(--color-surface);
+  background: var(--surface-raised);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
   padding: var(--space-md);
@@ -566,11 +621,11 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.ref-card__slot--accent { color: var(--color-accent); border-color: color-mix(in srgb, var(--color-accent) 55%, transparent); }
-.ref-card__slot--success { color: var(--state-success); border-color: var(--state-success-border); }
-.ref-card__slot--danger { color: var(--state-danger); border-color: var(--state-danger-border); }
-.ref-card__slot--warning { color: var(--state-warning); border-color: var(--state-warning-border); }
-.ref-card__slot--shield { color: var(--state-shield); border-color: var(--state-shield-border); }
+.ref-card__slot[data-tone="accent"] { color: var(--color-accent); border-color: color-mix(in srgb, var(--color-accent) 55%, transparent); }
+.ref-card__slot[data-tone="success"] { color: var(--state-success); border-color: var(--state-success-border); }
+.ref-card__slot[data-tone="danger"] { color: var(--state-danger); border-color: var(--state-danger-border); }
+.ref-card__slot[data-tone="warning"] { color: var(--state-warning); border-color: var(--state-warning-border); }
+.ref-card__slot[data-tone="shield"] { color: var(--state-shield); border-color: var(--state-shield-border); }
 .ref-card__summary {
   margin: 0;
   color: var(--color-text-muted);
