@@ -108,6 +108,19 @@ class MapEditorBrowserTest {
     }
 
     @Test
+    void keyboardShortcutKeepsInspectorContextInSync() {
+        page.click("[data-tool='brush']");
+        assertThat(page.getAttribute("[data-inspector-section='palette']", "data-relevance"))
+                .isEqualTo("primary");
+
+        page.keyboard().press("v");
+        assertThat(page.getAttribute("[data-inspector-section='selection']", "data-relevance"))
+                .isEqualTo("primary");
+        assertThat(page.getAttribute("[data-inspector-section='palette']", "data-relevance"))
+                .isEqualTo("secondary");
+    }
+
+    @Test
     void everySectionRemainsReachableEvenWhenSecondary() {
         page.click("[data-tool='brush']");
         for (String section : java.util.List.of("tool", "palette", "selection", "layers",
