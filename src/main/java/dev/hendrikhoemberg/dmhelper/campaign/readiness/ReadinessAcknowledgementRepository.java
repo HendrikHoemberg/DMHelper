@@ -8,6 +8,8 @@ public interface ReadinessAcknowledgementRepository
         extends JpaRepository<ReadinessAcknowledgement, UUID> {
 
     List<ReadinessAcknowledgement> findByCampaignId(UUID campaignId);
+
+    List<ReadinessAcknowledgement> findByCampaignIdIn(java.util.Collection<UUID> campaignIds);
     boolean existsByCampaignIdAndItemKey(UUID campaignId, String itemKey);
     void deleteByCampaignIdAndItemKey(UUID campaignId, String itemKey);
 }

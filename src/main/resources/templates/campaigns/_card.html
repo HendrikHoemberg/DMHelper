@@ -10,13 +10,23 @@
         </svg>
         <h3 th:text="${campaign.name}">Campaign Name</h3>
         <div class="book-meta" th:text="${campaign.authorLine}">4 heroes · opened 8 July</div>
-        <!-- Session progress, not readiness: the warning tone means "unresolved, caution"
-             (spec 6.4), and a campaign being underway is neither. Card-level readiness needs
-             a per-campaign readiness roll-up on the index model and is still outstanding. -->
+        <!-- Two distinct signals, per spec 11.1: where the campaign is, and whether it is
+             ready to run. Progress is information, not caution, so it never takes the warning
+             tone (spec 6.4); readiness is the one that may. -->
         <th:block th:replace="~{fragments/_badge :: badge(
             tone=${campaign.currentSceneId != null ? 'info' : 'neutral'},
             icon=${campaign.currentSceneId != null ? 'play' : 'flag'},
             label=${campaign.currentSceneId != null ? 'In progress' : 'Unstarted'})}"></th:block>
+        <th:block th:with="readiness=${campaignReadiness != null ? campaignReadiness.get(campaign.id) : null}">
+            <th:block th:if="${readiness != null and !readiness.items().isEmpty()}">
+                <th:block th:replace="~{fragments/_badge :: badge(
+                    tone=${readiness.sessionReady() ? 'success' : 'warning'},
+                    icon=${readiness.sessionReady() ? 'check' : 'alert-triangle'},
+                    label=${readiness.sessionReady()
+                            ? 'Ready'
+                            : readiness.blockerCountLabel(readiness.blockerCount())})}"></th:block>
+            </th:block>
+        </th:block>
     </a>
     <div class="card-actions">
         <button class="btn btn-ghost btn-xs"

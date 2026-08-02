@@ -77,6 +77,10 @@ public class CampaignController {
         campaigns.forEach(this::addAuthorLine);
         model.addAttribute("campaigns", campaigns);
         model.addAttribute("campaignSigils", sigilsFor(campaigns));
+        // Spec 11.1 puts readiness on the card. Batched, so the index costs a fixed number of
+        // queries rather than two-plus-lazy-loads per campaign.
+        model.addAttribute("campaignReadiness", readinessFacade.reportsForCampaigns(
+                campaigns.stream().map(Campaign::getId).toList()));
 
         String fragment = request.getParameter("fragment");
         if ("form".equals(fragment)) {
