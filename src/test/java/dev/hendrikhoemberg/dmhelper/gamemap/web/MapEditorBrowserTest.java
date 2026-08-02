@@ -92,6 +92,31 @@ class MapEditorBrowserTest {
         }
     }
 
+    @Test
+    void onlySectionsRelevantToTheActiveToolArePromoted() {
+        page.click("[data-tool='brush']");
+        assertThat(page.getAttribute("[data-inspector-section='palette']", "data-relevance"))
+                .isEqualTo("primary");
+        assertThat(page.getAttribute("[data-inspector-section='selection']", "data-relevance"))
+                .isEqualTo("secondary");
+
+        page.click("[data-tool='select']");
+        assertThat(page.getAttribute("[data-inspector-section='selection']", "data-relevance"))
+                .isEqualTo("primary");
+        assertThat(page.getAttribute("[data-inspector-section='palette']", "data-relevance"))
+                .isEqualTo("secondary");
+    }
+
+    @Test
+    void everySectionRemainsReachableEvenWhenSecondary() {
+        page.click("[data-tool='brush']");
+        for (String section : java.util.List.of("tool", "palette", "selection", "layers",
+                "map", "pins")) {
+            assertThat(page.isVisible("[data-inspector-section='" + section + "']"))
+                    .as("section %s stays reachable", section).isTrue();
+        }
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void geometryHelpersUseTheAuthoritativeGrid() {
@@ -241,6 +266,7 @@ class MapEditorBrowserTest {
     @SuppressWarnings("unchecked")
     @Test
     void settingsAndResizeConfirmationAreDiscoverable() {
+        expandInspectorSection("map");
         assertThat(page.locator("[data-map-control=\"map-section\"]").isVisible()).isTrue();
         assertThat(page.locator("[data-image-control=\"background-section\"]").isVisible()).isFalse();
 
@@ -290,6 +316,7 @@ class MapEditorBrowserTest {
     @SuppressWarnings("unchecked")
     @Test
     void imageImportSelectAndResize() throws Exception {
+        expandInspectorSection("map");
         byte[] pngBytes;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
@@ -404,6 +431,7 @@ class MapEditorBrowserTest {
     @SuppressWarnings("unchecked")
     @Test
     void importedImageHasCorrectFitGeometry() throws Exception {
+        expandInspectorSection("map");
         byte[] pngBytes;
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
@@ -546,6 +574,7 @@ class MapEditorBrowserTest {
                 """);
 
         page.evaluate("() => Alpine.$data(document.querySelector('[x-data=\"toolbar()\"]')).gridWidth = 10");
+        expandInspectorSection("map");
         page.locator("[data-map-control=\"resize-canvas-btn\"]").click();
         page.waitForTimeout(200);
 
@@ -814,6 +843,7 @@ class MapEditorBrowserTest {
         page.waitForFunction("() => window.mapEditor.tokenSnapshot.length === 1");
         page.evaluate("() => Alpine.$data(document.querySelector('[x-data=\"toolbar()\"]')).gridWidth = 10");
         page.evaluate("() => Alpine.$data(document.querySelector('[x-data=\"toolbar()\"]')).gridHeight = 10");
+        expandInspectorSection("map");
         page.locator("[data-map-control=\"resize-canvas-btn\"]").click();
 
         Map<String, Object> resolution = (Map<String, Object>) page.evaluate("""
@@ -936,6 +966,10 @@ class MapEditorBrowserTest {
                     .find(layer => layer.id === 'image').image.dataUrl.length
                 """);
         assertThat(length.intValue()).isLessThan(10_000);
+    }
+
+    private void expandInspectorSection(String section) {
+        page.click("[data-inspector-section='" + section + "'] > summary");
     }
 
     private void importSquarePng() throws Exception {

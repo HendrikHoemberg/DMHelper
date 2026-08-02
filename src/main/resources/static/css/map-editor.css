@@ -81,11 +81,20 @@
   color: var(--text-tertiary);
   margin: 0 0 var(--space-xs);
 }
-.mapedit__inspector > section {
+.mapedit__inspector > details {
   padding-bottom: var(--space-sm);
   border-bottom: 1px solid var(--border-subtle);
 }
-.mapedit__inspector > section:last-child { border-bottom: none; }
+.mapedit__inspector > details:last-child { border-bottom: none; }
+.mapedit__inspector details > summary {
+  cursor: pointer;
+}
+/* Contextual inspector (map-inspector.js): the section relevant to the active
+   tool is promoted to the top and expanded; every other section collapses to
+   its disclosure heading but stays reachable. */
+.mapedit__inspector [data-relevance="secondary"] > :not(summary) { display: none; }
+.mapedit__inspector [data-relevance="secondary"][open] > * { display: revert; }
+.mapedit__inspector [data-relevance="primary"] { order: -1; }
 .sidebar-field {
   display: flex;
   align-items: center;

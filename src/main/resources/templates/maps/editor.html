@@ -114,17 +114,17 @@
     </div>
 
     <aside class="mapedit__inspector" aria-label="Inspector">
-        <section data-inspector-section="tool">
-            <h3 class="mapedit__section-title">Tool</h3>
+        <details data-inspector-section="tool">
+            <summary class="mapedit__section-title">Tool</summary>
             <label class="sidebar-field">
                 <span>Snap to grid</span>
                 <button type="button" class="btn btn-ghost snap-toggle"
                         :aria-pressed="snap" @click="toggleSnap()" x-text="snap ? 'On' : 'Off'">On</button>
             </label>
-        </section>
+        </details>
 
-        <section data-inspector-section="palette">
-            <h3 class="mapedit__section-title">Terrain</h3>
+        <details data-inspector-section="palette">
+            <summary class="mapedit__section-title">Terrain</summary>
             <div style="position: relative;">
                 <template x-for="t in terrains" :key="t.key">
                     <button class="terrain-swatch" :class="{ active: terrain === t.key, erase: t.key === '__erase__' }"
@@ -155,10 +155,10 @@
                     </div>
                 </div>
             </div>
-        </section>
+        </details>
 
-        <section data-inspector-section="selection" x-show="selectedShape" style="display: none;">
-            <h3 class="mapedit__section-title">Shape</h3>
+        <details data-inspector-section="selection">
+            <summary class="mapedit__section-title">Shape</summary>
             <label class="sidebar-field">Fill
                 <input type="color" :value="selectedShape?.fill || '#000000'"
                        @change="if (selectedShape) { selectedShape.fill = $event.target.value; applyShapeFill(); }">
@@ -173,10 +173,10 @@
                        placeholder="Label…">
             </label>
             <button class="btn btn-ghost" style="width: 100%; margin-top: var(--space-xs);" @click="deleteShape()">Delete shape</button>
-        </section>
+        </details>
 
-        <section data-inspector-section="layers">
-            <h3 class="mapedit__section-title">Layers</h3>
+        <details data-inspector-section="layers">
+            <summary class="mapedit__section-title">Layers</summary>
             <template x-for="l in layerList" :key="l.id">
                 <div class="layer-item" :class="{ active: activeLayer === l.id }">
                     <span class="layer-name" @click="setLayer(l.id)" x-text="l.name"></span>
@@ -201,10 +201,10 @@
                     </label>
                 </div>
             </template>
-        </section>
+        </details>
 
-        <section data-inspector-section="map">
-            <h3 class="mapedit__section-title">Map</h3>
+        <details data-inspector-section="map">
+            <summary class="mapedit__section-title">Map</summary>
             <div data-map-control="map-section">
                 <label class="sidebar-field">Width
                     <input type="number" data-map-control="grid-width" x-model.number="gridWidth" min="5" max="100" class="u-w-full">
@@ -305,10 +305,10 @@
                     <input type="checkbox" data-image-control="lock-toggle" x-model="imageLocked" @change="setImageLocked(imageLocked)"> Lock
                 </label>
             </div>
-        </section>
+        </details>
 
-        <section data-inspector-section="pins" class="threat-pin-section" data-threat-pins>
-            <h3 class="mapedit__section-title">Threat pins</h3>
+        <details data-inspector-section="pins" class="threat-pin-section" data-threat-pins>
+            <summary class="mapedit__section-title">Threat pins</summary>
             <p class="text-muted u-text-xs" style="margin: 0 0 var(--space-xs);">DM-only markers. Not shown to players.</p>
             <label class="sidebar-field">Type
                 <select x-model="threatPinKind" @change="threatPinResults = []; threatPinQuery = ''" class="u-w-full">
@@ -350,7 +350,7 @@
                     </div>
                 </template>
             </div>
-        </section>
+        </details>
     </aside>
 
     <div class="mapedit__status">
@@ -361,6 +361,7 @@
     </div>
 
     <script th:src="@{/vendor/konva.min.js}"></script>
+    <script th:src="@{/js/map-inspector.js}"></script>
     <script>
         function toolbar() {
             return {
