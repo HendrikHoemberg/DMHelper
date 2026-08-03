@@ -1,23 +1,47 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
+<!--
+  The presentation surface (spec 11.11): a neutral near-black canvas that gives the asset the
+  viewport, with no DM navigation, management controls, or application chrome. It is also a
+  blocking overlay (spec 15), so it declares its role and accessible name here and is adopted
+  by the elevation model in ui-overlay.js, which gives it Escape, a focus trap, and focus
+  restoration to the Present button that opened it.
+-->
 <div class="handout-overlay" id="handoutOverlay" th:fragment="overlay"
-     th:attr="data-presentation-state=${handout != null ? 'ready' : 'unavailable'},
-              data-handout-visibility=${handout != null && !handout.dmOnly ? 'player-safe' : 'dm-only'}"
-     onclick="dismissHandout(this)">
-    <th:block th:if="${handout == null}">
+     role="dialog" aria-modal="true" data-presentation-overlay
+     th:attr="aria-label=${handout != null
+                  ? 'Presenting ' + handout.title
+                  : 'Handout unavailable'},
+              data-presentation-state=${handout != null ? 'ready' : 'unavailable'},
+              data-handout-visibility=${handout != null && !handout.dmOnly
+                  ? 'player-safe' : 'dm-only'}">
+
+    <img th:if="${handout != null}" id="handoutAsset" data-presentation-asset
+         th:src="@{/files/{id}(id=${handout.id})}" th:alt="${handout.title}">
+    <div class="handout-caption" th:if="${handout != null}" th:text="${handout.title}">Title</div>
+
+    <div class="handout-overlay__state" th:if="${handout == null}">
         <div th:replace="~{fragments/_states :: unavailable(
             title='This handout is not available',
-            description='The asset may have been removed or could not be loaded.',
-            retry=~{::#unavailableClose})}"></div>
-        <button id="unavailableClose" type="button" class="btn btn-ghost"
-                onclick="dismissHandout(this.closest('.handout-overlay'))">Close</button>
-    </th:block>
-    <img th:if="${handout != null}" th:src="@{/files/{id}(id=${handout.id})}"
-         th:alt="${handout.title}" onclick="event.stopPropagation()">
-    <div class="handout-caption" th:if="${handout != null}" th:text="${handout.title}"
-         onclick="event.stopPropagation()">Title</div>
-    <div class="overlay-close-hint">
-        Click anywhere to close
+            description='It may have been removed from the campaign since this page was loaded.',
+            retry=~{})}"></div>
     </div>
+
+    <!-- The asset exists but its file did not load. Revealed by ui-overlay.js on the image's
+         error event; Retry re-requests the same route (spec 16). -->
+    <div class="handout-overlay__state" id="presentationError" th:if="${handout != null}" hidden>
+        <div th:replace="~{fragments/_states :: failed(
+            title='This handout could not be displayed',
+            description='The file could not be loaded. Check that it is still available, then try again.',
+            retry=~{})}"></div>
+        <button type="button" class="btn" data-presentation-retry
+                th:attr="data-presentation-route=@{/campaigns/{cid}/handouts/{hid}/present(
+                    cid=${campaignId},hid=${handout.id})}">Retry</button>
+    </div>
+
+    <button type="button" class="btn btn-ghost handout-overlay__close" data-overlay-dismiss>
+        Close
+    </button>
+    <p class="overlay-close-hint">Press Escape, or click outside the handout, to close</p>
 </div>
 </html>

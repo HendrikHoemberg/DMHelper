@@ -26,6 +26,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -59,6 +60,16 @@ public class HandoutService {
     public Handout findById(UUID id) {
         return handoutRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Handout not found: " + id));
+    }
+
+    /**
+     * The presentation overlay swaps into the live page, so a missing handout has to come
+     * back as the overlay's own unavailable state (spec 11.11) rather than as an error page
+     * appended to the body.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Handout> findPresentable(UUID id) {
+        return handoutRepository.findById(id);
     }
 
     public Handout create(UUID campaignId, String title, String tags, MultipartFile file) throws IOException {

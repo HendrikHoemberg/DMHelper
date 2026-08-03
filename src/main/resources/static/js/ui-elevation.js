@@ -443,11 +443,9 @@
   } else {
     init();
   }
-  window.dismissHandout = function(overlay) {
-    if (overlay.classList.contains('closing')) return;
-    overlay.classList.add('closing');
-    setTimeout(() => overlay.remove(), 550);
-  };
+  /* dismissHandout moved to ui-overlay.js: the presentation overlay is now adopted by the
+     elevation model, so its dismissal has to go through dmOverlay.close for focus
+     restoration rather than removing the node behind the model's back. */
 
   window.tickNumber = function(element, to, duration = 300) {
     const from = parseInt(element.textContent, 10) || 0;

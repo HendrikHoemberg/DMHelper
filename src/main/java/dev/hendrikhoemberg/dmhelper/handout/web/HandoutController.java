@@ -72,7 +72,9 @@ public class HandoutController {
 
     @GetMapping("/{id}/present")
     public String presentOverlay(@PathVariable UUID campaignId, @PathVariable UUID id, Model model) {
-        model.addAttribute("handout", handoutService.findById(id));
+        /* The overlay swaps into the live page, so a handout that has gone missing renders
+           the overlay's own unavailable state rather than appending an error page. */
+        model.addAttribute("handout", handoutService.findPresentable(id).orElse(null));
         model.addAttribute("campaignId", campaignId);
         return "handout/_present-overlay :: overlay";
     }

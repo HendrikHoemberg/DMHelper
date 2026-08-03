@@ -47,11 +47,49 @@ class PresentationSurfaceTest {
         assertThat(overlay).doesNotContain("var(--surface-raised)");
     }
 
+    /**
+     * Spec 11.11 asks for explicit unavailable <em>and</em> error states. Only the first
+     * shipped, and its retry slot held a Close button rather than anything that re-fetches.
+     */
     @Test
     void unavailableAndErrorPresentationStatesAreExplicit() throws Exception {
+        var document = Jsoup.parse(overlay(), "", Parser.xmlParser());
+
         assertThat(overlay())
                 .contains("data-presentation-state")
-                .contains("_states :: unavailable");
+                .contains("_states :: unavailable")
+                .contains("_states :: failed");
+
+        assertThat(document.select("#presentationError"))
+                .as("an asset that fails to load needs its own state, not an empty canvas")
+                .isNotEmpty();
+        assertThat(document.select("[data-presentation-retry]"))
+                .as("spec 16: a recoverable failure offers a Retry")
+                .isNotEmpty()
+                .allSatisfy(retry -> assertThat(
+                        retry.hasAttr("data-presentation-route")
+                                || retry.attr("th:attr").contains("data-presentation-route="))
+                        .as("the Retry re-fetches the presentation route")
+                        .isTrue());
+    }
+
+    /** Spec 15: this is a blocking overlay and has to declare itself as one. */
+    @Test
+    void thePresentationSurfaceIsPartOfTheElevationModel() throws Exception {
+        var root = Jsoup.parse(overlay(), "", Parser.xmlParser()).selectFirst(".handout-overlay");
+        assertThat(root).isNotNull();
+        assertThat(root.attr("role")).isEqualTo("dialog");
+        assertThat(root.attr("aria-modal")).isEqualTo("true");
+        assertThat(root.attr("th:attr"))
+                .as("the overlay names itself for assistive technology")
+                .contains("aria-label=");
+        assertThat(root.hasAttr("data-presentation-overlay"))
+                .as("ui-overlay.js adopts the surface through this hook, which is what gives "
+                        + "it Escape, a focus trap, and focus restoration")
+                .isTrue();
+        assertThat(root.select("[data-overlay-dismiss]"))
+                .as("a keyboard user needs a focusable way out")
+                .isNotEmpty();
     }
 
     @Test

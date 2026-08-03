@@ -24,9 +24,12 @@
         trapped = topBlocking();
     }
 
-    function open(element) {
+    /* `trigger` is explicit for overlays that arrive asynchronously: hx-disabled-elt blurs
+       the button while its request is in flight, so by the time the swap lands
+       document.activeElement is the body and focus would be restored to nowhere. */
+    function open(element, trigger) {
         if (!openOverlays.includes(element)) openOverlays.push(element);
-        triggers.set(element, document.activeElement);
+        triggers.set(element, trigger || document.activeElement);
         element.hidden = false;
         retrap();
         const first = focusables(element)[0];
@@ -75,8 +78,64 @@
     document.addEventListener('click', event => {
         const dismiss = event.target.closest('[data-overlay-dismiss]');
         if (!dismiss) return;
-        const overlay = dismiss.closest('.dialog, .side-sheet, .popover');
+        const overlay = dismiss.closest('.dialog, .side-sheet, .popover, .handout-overlay');
         if (overlay) close(overlay);
+    });
+
+    /* ── Presentation surface (spec 11.11 and 15) ─────────────────────────────────
+       The handout overlay arrives from htmx already visible rather than through
+       dmOverlay.open's hidden flip, so it adopts itself on arrival. Without this it
+       had no Escape, no focus trap, and no focus restoration — the only blocking
+       surface in the product outside the elevation model. */
+    function adoptPresentationOverlay(event) {
+        const overlay = document.querySelector(
+            '[data-presentation-overlay]:not([data-overlay-adopted])');
+        if (!overlay) return;
+        overlay.dataset.overlayAdopted = 'true';
+        const trigger = event?.detail?.requestConfig?.elt;
+
+        /* An asset that 404s or is unreadable is a presentation error, not an empty
+           canvas: swap the state so the failed panel and its Retry become visible. */
+        const asset = overlay.querySelector('[data-presentation-asset]');
+        if (asset) {
+            asset.addEventListener('error', () => {
+                overlay.dataset.presentationState = 'error';
+                const panel = overlay.querySelector('#presentationError');
+                if (panel) panel.hidden = false;
+                retrap();
+            });
+        }
+
+        /* Clicking the canvas itself closes; clicking the asset, the caption, or any
+           control inside them does not. */
+        overlay.addEventListener('click', event => {
+            if (event.target === overlay) close(overlay);
+        });
+
+        /* close() restores focus and hides; the overlay then plays its fold-out and
+           removes itself, so a second Present starts from a clean document. */
+        overlay.addEventListener('dm-overlay-closed', () => {
+            overlay.hidden = false;
+            overlay.classList.add('closing');
+            const remove = () => overlay.remove();
+            overlay.addEventListener('transitionend', remove, { once: true });
+            setTimeout(remove, 800);
+        });
+
+        open(overlay, trigger);
+    }
+
+    document.addEventListener('htmx:afterSwap', adoptPresentationOverlay);
+
+    /* Retry re-requests the same route and replaces the overlay in place (spec 16). */
+    document.addEventListener('click', event => {
+        const retry = event.target.closest('[data-presentation-retry]');
+        if (!retry) return;
+        const overlay = retry.closest('[data-presentation-overlay]');
+        const route = retry.dataset.presentationRoute;
+        if (!overlay || !route) return;
+        close(overlay);
+        if (window.htmx) window.htmx.ajax('GET', route, { target: 'body', swap: 'beforeend' });
     });
 
     window.dmOverlay = { open, close };

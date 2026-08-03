@@ -109,6 +109,40 @@ class OverlayBehaviorGateTest {
         assertThat(deletes).as("cancelling must not issue the request").isEmpty();
     }
 
+    /**
+     * Spec 11.11 and 15. The presentation overlay is the one blocking surface in the product
+     * that used to sit outside the elevation model: no role, no accessible name, no focus
+     * trap, and Escape did nothing, because ui-overlay.js only closes overlays it opened and
+     * this one is swapped in by htmx.
+     */
+    @Test
+    void thePresentationSurfaceTrapsFocusAndRestoresItOnEscape() {
+        page.navigate("http://localhost:" + port + "/campaigns/" + seeded.campaignId() + "/handouts");
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+
+        Locator present = page.locator("[hx-get$='/present']").first();
+        present.click();
+
+        Locator overlay = page.locator("#handoutOverlay");
+        overlay.waitFor();
+        assertThat(overlay.getAttribute("role")).isEqualTo("dialog");
+        assertThat(overlay.getAttribute("aria-modal")).isEqualTo("true");
+        assertThat(overlay.getAttribute("aria-label"))
+                .as("the surface names what it is presenting")
+                .startsWith("Presenting ");
+        assertThat(overlay.getAttribute("data-presentation-state")).isEqualTo("ready");
+        assertThat(page.evaluate(
+                "() => document.activeElement.closest('#handoutOverlay') !== null"))
+                .as("focus moves into the overlay").isEqualTo(true);
+
+        page.keyboard().press("Escape");
+        overlay.waitFor(new Locator.WaitForOptions()
+                .setState(com.microsoft.playwright.options.WaitForSelectorState.DETACHED));
+        assertThat(page.evaluate(
+                "() => document.activeElement.getAttribute('hx-get')?.endsWith('/present')"))
+                .as("focus returns to the Present button that opened it").isEqualTo(true);
+    }
+
     @Test
     void escapeClosesADialogAndRestoresFocusToItsTrigger() {
         page.evaluate("""
