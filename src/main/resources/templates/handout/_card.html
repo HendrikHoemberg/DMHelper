@@ -33,7 +33,8 @@
         </button>
         <button class="btn btn-danger action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/handouts/{id}(cid=${handout.campaign.id},id=${handout.id})}"
-                hx-confirm="Delete this handout?"
+                th:hx-confirm="|Delete ${handout.title}?|"
+                data-confirm-consequence="The handout and its uploaded file are deleted permanently. Scenes that referenced it lose the reference."
                 hx-swap="none"
                 hx-disabled-elt="this">
             Delete

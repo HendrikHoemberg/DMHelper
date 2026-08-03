@@ -75,6 +75,13 @@
             managementLoading: false,
             managementMessage: '',
 
+            /* Confirmations name the entity (spec 14). The management panel is a separate
+               Alpine component from the editor form, so it reads the name off the seeded DTO
+               rather than the form state. */
+            cueName() {
+                return (EXISTING && (EXISTING.name || EXISTING.cueKey)) || 'this audio cue';
+            },
+
             cloneCue() {
                 this.managementLoading = true;
                 this.managementMessage = '';
@@ -107,15 +114,20 @@
                 fetch(API_BASE + '/' + CUE_ID + '/deletion-impact')
                 .then(res => res.json())
                 .then(impact => {
-                    if (impact.hasDependents) {
-                        const msg = impact.dependencies.map(d => d.kind + ': ' + d.label).join(', ');
-                        if (!confirm('This cue has dependents:\n' + msg + '\n\nDelete anyway?')) {
-                            this.managementLoading = false;
-                            return;
-                        }
-                    } else if (!confirm('Delete this audio cue?')) {
+                    const consequence = impact.hasDependents
+                        ? 'These still point at it and will lose the cue: '
+                            + impact.dependencies.map(d => d.kind + ' ' + d.label).join(', ')
+                            + '. The cue itself is deleted permanently.'
+                        : 'The cue is deleted permanently. Nothing currently points at it.';
+                    return window.dmConfirm({
+                        question: 'Delete ' + this.cueName() + '?',
+                        consequence
+                    });
+                })
+                .then(confirmed => {
+                    if (!confirmed) {
                         this.managementLoading = false;
-                        return;
+                        return undefined;
                     }
                     return fetch(API_BASE + '/' + CUE_ID + '?confirmed=true', { method: 'DELETE' });
                 })

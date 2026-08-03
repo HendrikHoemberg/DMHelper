@@ -10,6 +10,13 @@
                 return document.querySelector('[data-table-id]')?.dataset.tableId || window.TABLE_ID;
             },
 
+            /* Confirmations name the entity (spec 14), so the table's name has to reach the
+               script; "this table" is the fallback when the panel is rendered without it. */
+            tableName() {
+                return document.querySelector('[data-table-name]')?.dataset.tableName
+                    || 'this table';
+            },
+
             campaignId() {
                 return document.body.dataset.campaignId || null;
             },
@@ -38,7 +45,13 @@
             },
 
             async promoteTable() {
-                if (!window.confirm('Promote this table to the global library?')) return;
+                const promote = await window.dmConfirm({
+                    question: 'Promote ' + this.tableName() + ' to the global library?',
+                    consequence: 'The table becomes available in every campaign and leaves this'
+                        + ' campaign’s table list.',
+                    acceptLabel: 'Promote'
+                });
+                if (!promote) return;
                 this.managementLoading = true;
                 this.managementMessage = 'Promoting…';
                 try {
@@ -64,10 +77,15 @@
                         '/api/v1/rollable-tables/' + this.tableId() + '/deletion-impact');
                     const impact = await impactResponse.json();
                     const count = (impact.dependencies || []).length;
-                    const message = count > 0
-                        ? 'This table has ' + count + ' dependent link(s). Delete it and replace those references with markers?'
-                        : 'Delete this table? Roll history and draft snapshots will be retained.';
-                    if (!window.confirm(message)) {
+                    const consequence = count > 0
+                        ? 'This table has ' + count + ' dependent link(s); each one is replaced'
+                            + ' with a marker. Roll history and draft snapshots are kept.'
+                        : 'Roll history and draft snapshots are kept.';
+                    const confirmed = await window.dmConfirm({
+                        question: 'Delete ' + this.tableName() + '?',
+                        consequence
+                    });
+                    if (!confirmed) {
                         this.managementMessage = '';
                         return;
                     }

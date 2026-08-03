@@ -31,7 +31,7 @@
 
 <div id="page-content" class="page-content" x-data="tableManagement()"
      th:attr="data-campaign-id=${campaignId}">
-    <div class="detail-section" th:attr="data-table-id=${table.id}">
+    <div class="detail-section" th:attr="data-table-id=${table.id}, data-table-name=${table.name}">
         <div class="detail-meta">
             <th:block th:replace="~{fragments/_badge :: badge(tone='neutral', icon=${null}, label=${#enums.label(table.category)})}"></th:block>
             <th:block th:replace="~{fragments/_badge :: badge(tone='neutral', icon=${null}, label=${#enums.label(table.addressMode)})}"></th:block>

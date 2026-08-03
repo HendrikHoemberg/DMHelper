@@ -11,7 +11,9 @@
                   th:hx-delete="@{/campaigns/{cid}/quests/{qid}/dependencies(cid=${campaignId},qid=${quest.id})}"
                   th:attr="hx-vals='{&quot;objectiveId&quot;: &quot;' + ${dep.objective.id} + '&quot;, &quot;prerequisiteObjectiveId&quot;: &quot;' + ${dep.prerequisiteObjective.id} + '&quot;}'"
                   hx-target="#dependencyList" hx-swap="innerHTML"
-                  hx-confirm="Remove this dependency?"
+                  th:hx-confirm="|Stop ${obj.title} depending on ${dep.prerequisiteObjective.title}?|"
+                  data-confirm-consequence="Only the prerequisite is removed. Both objectives are kept."
+                  data-confirm-accept="Remove"
                   hx-disabled-elt="this">&times;</button>
         </div>
       </div>

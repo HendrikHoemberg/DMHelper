@@ -31,7 +31,8 @@
                     hx-disabled-elt="this">Edit</button>
             <button class="btn btn-danger btn-sm action-row__destructive"
                     th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{chId}(cid=${campaignId},aid=${adventure.id},chId=${ch.id})}"
-                    hx-confirm="Delete this chapter and all its scenes?"
+                    th:hx-confirm="|Delete ${ch.title}?|"
+                    data-confirm-consequence="The chapter and every scene inside it are deleted permanently."
                     hx-target="closest .detail-section" hx-swap="outerHTML"
                     hx-disabled-elt="this">Delete</button>
           </div>

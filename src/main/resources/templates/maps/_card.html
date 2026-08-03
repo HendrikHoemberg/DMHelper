@@ -41,7 +41,8 @@
         <span class="action-row__destructive">
             <button class="btn btn-danger"
                     th:attr="hx-delete=@{/campaigns/{cid}/maps/{mid}(cid=${campaignId}, mid=${map.id})}"
-                    hx-confirm="Delete this map?"
+                    th:hx-confirm="|Delete ${map.name}?|"
+                    data-confirm-consequence="The map, its layers, tokens, and threat pins are deleted permanently. Encounters that used it keep their combatants but lose the map."
                     hx-target="closest .card"
                     hx-swap="outerHTML">
                 Delete

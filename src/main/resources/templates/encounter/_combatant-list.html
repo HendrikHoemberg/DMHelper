@@ -13,6 +13,8 @@
                     <button class="btn btn-ghost btn-xs action-row__destructive"
                             th:hx-delete="@{/api/v1/combatants/{id}(id=${c.id})}"
                             th:hx-confirm="|Remove ${c.name} from this encounter?|"
+                            data-confirm-consequence="The combatant leaves this encounter, along with its rolled initiative and current hit points. Its statblock stays in the library."
+                            data-confirm-accept="Remove"
                             hx-target="closest [data-combatant-row]"
                             hx-swap="delete"
                             hx-disabled-elt="this">

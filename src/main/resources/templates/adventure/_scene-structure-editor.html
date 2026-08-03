@@ -42,7 +42,8 @@
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/sections/{sectionId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},sectionId=${section.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
-                hx-confirm="Delete this section?"
+                th:hx-confirm="|Delete the ${section.label} section?|"
+                data-confirm-consequence="The section and its read-aloud and DM text are deleted permanently."
                 hx-disabled-elt="this">&times;</button>
       </div>
     </div>
@@ -147,7 +148,8 @@
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/checks/{checkId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},checkId=${check.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
-                hx-confirm="Delete this check?"
+                th:hx-confirm="|Delete the ${check.label} check?|"
+                data-confirm-consequence="The check and its success, failure, and partial outcomes are deleted permanently."
                 hx-disabled-elt="this">&times;</button>
       </div>
     </div>
@@ -227,7 +229,9 @@
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/participants/{pid}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},pid=${p.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
-                hx-confirm="Delete this participant?"
+                th:hx-confirm="|Remove ${p.displayName} from this scene?|"
+                data-confirm-consequence="The participant leaves the scene. Any statblock it referenced stays in the library."
+                data-confirm-accept="Remove"
                 hx-disabled-elt="this">&times;</button>
       </div>
     </div>
@@ -288,7 +292,8 @@
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/transitions/{tid}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},tid=${t.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
-                hx-confirm="Delete this transition?"
+                th:hx-confirm="|Delete the ${t.label} transition?|"
+                data-confirm-consequence="The route out of this scene is deleted. The scene it pointed at is not affected."
                 hx-disabled-elt="this">&times;</button>
       </div>
     </div>
@@ -351,7 +356,9 @@
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/chapters/{ch}/scenes/{sid}/links/{linkId}(cid=${campaignId},aid=${adventure.id},ch=${scene.chapter.id},sid=${scene.id},linkId=${link.id})}"
                 hx-target="#sceneStructureEditor" hx-swap="innerHTML"
-                hx-confirm="Delete this link?"
+                th:hx-confirm="|Remove the ${link.displayText ?: link.targetType} link?|"
+                data-confirm-consequence="Only the link is removed. The record it points at is not deleted."
+                data-confirm-accept="Remove"
                 hx-disabled-elt="this">&times;</button>
       </div>
     </div>

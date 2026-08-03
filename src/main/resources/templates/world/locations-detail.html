@@ -58,7 +58,8 @@
         <p class="text-muted u-text-sm">This action cannot be undone.</p>
         <button class="btn btn-danger action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}(cid=${campaignId},lid=${location.id})}"
-                hx-confirm="Delete this location?"
+                th:hx-confirm="|Delete ${location.name}?|"
+                data-confirm-consequence="The location, its relationships, and its links are deleted permanently. Child locations are kept and lose their parent."
                 hx-target="body" hx-swap="outerHTML"
                 hx-disabled-elt="this">Delete</button>
     </div>
@@ -92,7 +93,9 @@
             <span class="badge badge--neutral" th:text="${#enums.label(link.role)}">ROLE</span>
             <button class="btn btn-danger btn-xs action-row__destructive"
                     th:hx-delete="@{/campaigns/{cid}/world/locations/{lid}/tables/{linkId}(cid=${campaignId},lid=${location.id},linkId=${link.id})}"
-                    hx-confirm="Remove this table link?"
+                    th:hx-confirm="|Remove the link to ${link.table.name}?|"
+                    data-confirm-consequence="The rollable table stays in the library; only its link to this location is removed."
+                    data-confirm-accept="Remove"
                     hx-target="body" hx-swap="outerHTML"
                     hx-disabled-elt="this">&times;</button>
         </li>

@@ -88,7 +88,8 @@
                 <p class="text-muted u-mb-sm">Once you delete an encounter, there is no going back. Please be certain.</p>
                 <button class="btn btn-danger action-row__destructive"
                         th:attr="hx-delete=@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}"
-                        hx-confirm="Delete this encounter?"
+                        th:hx-confirm="|Delete ${encounter.name}?|"
+                        th:data-confirm-consequence="|The encounter, its waves, and its combatants are deleted permanently. The scene and map it references are not affected.|"
                         hx-target="body"
                         hx-swap="outerHTML">Delete encounter</button>
             </div>

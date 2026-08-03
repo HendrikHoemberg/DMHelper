@@ -40,7 +40,8 @@
         <button class="btn btn-danger btn-sm action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/quests/{qid}/objectives/{oid}(cid=${campaignId},qid=${quest.id},oid=${obj.id})}"
                 hx-target="#objectiveList" hx-swap="innerHTML"
-                hx-confirm="Delete this objective?"
+                th:hx-confirm="|Delete the ${obj.title} objective?|"
+                data-confirm-consequence="The objective and every dependency that points at it are deleted permanently."
                 hx-disabled-elt="this">&times;</button>
       </div>
     </div>

@@ -88,7 +88,7 @@ class AdventureDetailDensityTest {
         String readingFlow = body.substring(organizeEnd);
 
         assertThat(readingFlow).as("chapter rows are for reading").doesNotContain("data-chapter-controls");
-        assertThat(readingFlow).doesNotContain("hx-confirm=\"Delete this chapter and all its scenes?\"");
+        assertThat(readingFlow).doesNotContain("hx-confirm=");
         assertThat(readingFlow).doesNotContain("hx-vals='{\"direction\"");
     }
 

@@ -3859,6 +3859,15 @@ dialog.modal:not([open]) {
   padding: var(--space-sm); border-top: 1px solid var(--border-subtle);
 }
 
+/* The consequence line in the shared confirmation dialog: the sentence the DM is actually
+   deciding on, so it reads at body size rather than as metadata (spec 14). */
+.dialog__consequence {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
 /* The shared side-sheet fragment is the only complementary side-sheet, and it is
    hidden-attribute driven: dmOverlay.open clears `hidden` and never adds the legacy `.open`
    class, so it must be fully immune to the legacy statblock sheet's geometry and its

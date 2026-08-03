@@ -37,7 +37,9 @@
         </form>
         <button class="btn btn-danger btn-xs action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/treasury/{id}(cid=${assignment.campaignId()}, id=${assignment.id()})}"
-                hx-target="closest tr" hx-swap="outerHTML" hx-confirm="Remove this item?"
+                hx-target="closest tr" hx-swap="outerHTML" th:hx-confirm="|Remove ${assignment.itemName()} from the treasury?|"
+                data-confirm-consequence="The item leaves the treasury and its holder&#39;s inventory. Ledger entries that recorded it are kept."
+                data-confirm-accept="Remove"
                 hx-disabled-elt="this">
             &times;
         </button>

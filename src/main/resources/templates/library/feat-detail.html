@@ -53,7 +53,8 @@
         <p class="text-muted u-text-sm">This action cannot be undone.</p>
         <button class="btn btn-danger action-row__destructive"
                 th:hx-delete="@{/library/feats/{id}(id=${feat.id})}"
-                hx-confirm="Delete this feat?"
+                th:hx-confirm="|Delete ${feat.name}?|"
+                th:data-confirm-consequence="|The entry is removed from the library for every campaign. Records that already copied it are not changed.|"
                 hx-target="body" hx-swap="outerHTML"
                 hx-disabled-elt="this">Delete</button>
     </div>

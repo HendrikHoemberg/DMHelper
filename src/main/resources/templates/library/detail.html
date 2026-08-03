@@ -47,7 +47,8 @@
         <p class="text-muted u-text-sm">This action cannot be undone.</p>
         <button class="btn btn-danger action-row__destructive"
                 th:hx-delete="@{/library/statblocks/{id}(id=${sb.id})}"
-                hx-confirm="Delete this statblock?"
+                th:hx-confirm="|Delete ${sb.name}?|"
+                th:data-confirm-consequence="|The statblock is removed from the library. Encounters that already added it keep their combatants.|"
                 hx-target="body" hx-swap="outerHTML"
                 hx-disabled-elt="this">Delete</button>
     </div>

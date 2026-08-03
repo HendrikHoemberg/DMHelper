@@ -36,14 +36,17 @@
             <th:block th:if="${sb.campaignId != null}">
                 <button class="btn btn-ghost btn-xs"
                         th:hx-put="@{/library/statblocks/{id}/promote(id=${sb.id})}"
-                        hx-confirm="Promote to global? It will be available in all campaigns."
+                        th:hx-confirm="|Promote ${sb.name} to the global library?|"
+                        data-confirm-consequence="The statblock becomes available in every campaign and leaves this campaign&#39;s homebrew list."
+                        data-confirm-accept="Promote"
                         hx-target="closest .ref-card"
                         hx-swap="outerHTML"
                         hx-disabled-elt="this">Promote</button>
             </th:block>
             <button class="btn btn-danger btn-xs action-row__destructive"
                     th:hx-delete="@{/library/statblocks/{id}(id=${sb.id})}"
-                    hx-confirm="Delete this statblock?"
+                    th:hx-confirm="|Delete ${sb.name}?|"
+                    th:data-confirm-consequence="|The statblock is removed from the library. Encounters that already added it keep their combatants.|"
                     hx-target="closest .ref-card"
                     hx-swap="outerHTML"
                     hx-disabled-elt="this">Delete</button>

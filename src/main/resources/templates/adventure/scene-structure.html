@@ -56,7 +56,8 @@
         <p class="u-text-xs text-muted">This action cannot be undone.</p>
         <button class="btn btn-danger action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/adventures/{aid}/scenes/{sid}(cid=${campaignId},aid=${adventure.id},sid=${scene.id})}"
-                hx-confirm="Delete this scene?"
+                th:hx-confirm="|Delete ${scene.title}?|"
+                data-confirm-consequence="The scene and its sections, checks, participants, transitions, and links are deleted permanently."
                 hx-target="body" hx-swap="outerHTML"
                 hx-disabled-elt="this">Delete scene</button>
     </div>

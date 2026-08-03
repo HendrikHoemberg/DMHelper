@@ -161,7 +161,8 @@
         <p class="text-muted u-text-sm">This action cannot be undone.</p>
         <button class="btn btn-danger action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/world/factions/{fid}(cid=${campaignId},fid=${faction.id})}"
-                hx-confirm="Delete this faction?"
+                th:hx-confirm="|Delete ${faction.name}?|"
+                data-confirm-consequence="The faction, its clocks, and its relationships are deleted permanently."
                 hx-target="body" hx-swap="outerHTML"
                 hx-disabled-elt="this">Delete</button>
     </div>

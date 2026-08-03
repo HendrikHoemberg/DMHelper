@@ -1,7 +1,10 @@
 package dev.hendrikhoemberg.dmhelper.config;
 
+import org.jsoup.nodes.Element;
 import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -36,14 +39,48 @@ class FormContractTest {
         assertThat(fragment).contains("role=\"alert\"").contains("aria-live");
     }
 
+    /**
+     * Spec 14: a confirmation names the affected entity and the consequence. The entity is
+     * editorial and reviewed against the capture set; the consequence is structural, because
+     * it is a separate declaration the trigger either carries or does not.
+     *
+     * <p>The previous version of this test keyed off the literal string {@code data-confirm}
+     * and so skipped every {@code hx-confirm} in the product — 41 triggers across 35
+     * templates — because {@code hx-confirm} does not contain it. It could not fail.
+     */
     @Test
-    void confirmationCopyNamesTheEntityAndConsequence() {
+    void everyConfirmationTriggerDeclaresItsConsequence() {
+        List<String> offenders = new ArrayList<>();
+        int triggers = 0;
+
         for (Path template : TemplateRules.allTemplates()) {
-            String markup = TemplateRules.read(template);
-            if (!markup.contains("data-confirm")) continue;
-            assertThat(markup)
-                    .as("%s: confirmation must name the consequence", template)
-                    .contains("data-confirm-consequence");
+            for (Element element : TemplateRules.parse(template).getAllElements()) {
+                if (!asksForConfirmation(element)) continue;
+                triggers++;
+                if (!declaresConsequence(element)) {
+                    offenders.add(template + ": " + element.outerHtml());
+                }
+            }
         }
+
+        assertThat(triggers)
+                .as("the confirmation scan must find the product's confirmations to mean anything")
+                .isGreaterThan(30);
+        assertThat(offenders)
+                .as("confirmations with no data-confirm-consequence")
+                .isEmpty();
+    }
+
+    private static boolean asksForConfirmation(Element element) {
+        return element.hasAttr("hx-confirm")
+                || element.hasAttr("th:hx-confirm")
+                || element.hasAttr("data-confirm");
+    }
+
+    /** Declared directly, through Thymeleaf's generic attribute form, or via th:attr. */
+    private static boolean declaresConsequence(Element element) {
+        return element.hasAttr("data-confirm-consequence")
+                || element.hasAttr("th:data-confirm-consequence")
+                || element.attr("th:attr").contains("data-confirm-consequence=");
     }
 }

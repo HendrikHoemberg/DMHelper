@@ -76,7 +76,7 @@ class SceneStructureEditSurfaceTest {
     @Test
     void sceneFieldsAndDeletePresent() {
         assertThat(body).contains("name=\"sceneKey\"");
-        assertThat(body).contains("hx-confirm=\"Delete this scene?\"");
+        assertThat(body).contains("hx-confirm=").contains("data-confirm-consequence=");
         assertThat(body).contains("Move earlier");
         assertThat(body).contains("Move later");
     }

@@ -77,7 +77,8 @@
                            th:href="@{/campaigns/{cid}/encounters/{eid}/setup(cid=${campaignId}, eid=${e.id})}">Setup</a>
                         <button class="btn btn-danger btn-xs action-row__destructive"
                                 th:attr="hx-delete=@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${e.id})}"
-                                hx-confirm="Delete this encounter?"
+                                th:hx-confirm="|Delete ${e.name}?|"
+                                th:data-confirm-consequence="|The encounter, its waves, and its combatants are deleted permanently. The scene and map it references are not affected.|"
                                 hx-target="closest .encounter-row"
                                 hx-swap="outerHTML">Delete</button>
                     </td>

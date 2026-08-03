@@ -37,6 +37,31 @@
     <th:block th:replace="${body}"></th:block>
 </div>
 
+<!-- The one confirmation dialog for the whole product (spec 14 and 15). Every destructive
+     hx-confirm is routed through it by ui-overlay.js, so a delete is a real modal with an
+     accessible name, a focus trap, Escape, and focus restoration — not a browser confirm()
+     that sits outside the elevation model entirely. The question names the entity; the
+     consequence line comes from the trigger's data-confirm-consequence. -->
+<div th:fragment="confirm-dialog" id="confirmDialog" class="dialog" role="dialog"
+     aria-modal="true" aria-labelledby="confirmDialogTitle"
+     aria-describedby="confirmDialogConsequence" hidden>
+    <div class="dialog__backdrop" data-overlay-dismiss></div>
+    <div class="dialog__panel">
+        <div class="dialog__header">
+            <h2 class="dialog__title" id="confirmDialogTitle" data-confirm-question>Are you sure?</h2>
+        </div>
+        <div class="dialog__body">
+            <p class="dialog__consequence" id="confirmDialogConsequence"
+               data-confirm-consequence-text></p>
+        </div>
+        <div class="dialog__actions" data-action-region>
+            <button type="button" class="btn btn-ghost" data-confirm-cancel>Cancel</button>
+            <button type="button" class="btn btn-danger action-row__destructive"
+                    data-confirm-accept>Delete</button>
+        </div>
+    </div>
+</div>
+
 <div th:fragment="toast-region" class="toast-region" id="toastRegion"
      role="status" aria-live="polite"></div>
 </html>

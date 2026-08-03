@@ -32,7 +32,8 @@
         <button class="btn btn-ghost btn-xs"
                 aria-label="Delete campaign"
                 th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
-                hx-confirm="Delete this campaign?"
+                th:hx-confirm="|Delete ${campaign.name}?|"
+                th:data-confirm-consequence="|Everything in ${campaign.name} — adventures, encounters, party, maps, handouts, notes, and session history — is deleted permanently.|"
                 hx-target="closest .book-cover-wrapper"
                 hx-swap="outerHTML swap:200ms"
                 hx-disabled-elt="this">

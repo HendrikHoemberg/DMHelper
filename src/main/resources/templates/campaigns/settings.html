@@ -105,7 +105,7 @@
             <span class="action-row__destructive">
                 <button class="btn btn-danger"
                         th:hx-delete="@{/campaigns/{id}(id=${campaign.id})}"
-                        hx-confirm="Delete this campaign? This cannot be undone."
+                        th:hx-confirm="|Delete ${campaign.name}?|"
                         hx-target="body"
                         hx-swap="outerHTML"
                         hx-disabled-elt="this"

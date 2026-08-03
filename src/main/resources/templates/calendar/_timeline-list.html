@@ -68,7 +68,8 @@
                                 <button class="btn btn-danger btn-xs action-row__destructive"
                                         th:hx-delete="@{/campaigns/{cid}/calendar/events/{eid}(cid=${e.campaignId()}, eid=${e.id()})}"
                                         hx-target="closest tr" hx-swap="outerHTML"
-                                        hx-confirm="Delete this event?"
+                                        th:hx-confirm="|Delete ${e.title()}?|"
+                                        data-confirm-consequence="The event is removed from the campaign calendar and from its timeline history."
                                         hx-disabled-elt="this">
                                     &times;
                                 </button>

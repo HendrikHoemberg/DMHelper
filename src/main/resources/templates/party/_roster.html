@@ -119,7 +119,9 @@
                 <span class="roster-row__destructive">
                     <button class="btn btn-danger btn-xs action-row__destructive"
                             th:hx-delete="@{/campaigns/{cid}/party/{pid}(cid=${pm.campaign.id}, pid=${pm.id})}"
-                            hx-confirm="Remove this party member?"
+                            th:hx-confirm="|Remove ${pm.characterName} from the party?|"
+                            data-confirm-consequence="The member leaves the roster and stops appearing in encounters and readiness. Their character sheet is kept."
+                            data-confirm-accept="Remove"
                             hx-target="closest .roster-row" hx-swap="outerHTML"
                             hx-disabled-elt="this">Remove</button>
                 </span>

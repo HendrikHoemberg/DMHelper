@@ -34,7 +34,8 @@
         <button class="btn btn-danger btn-xs action-row__destructive"
                 th:hx-delete="@{/campaigns/{cid}/notes/{nid}(cid=${note.campaign.id}, nid=${note.id})}"
                 hx-target="#notes-list" hx-swap="outerHTML"
-                hx-confirm="Delete this note?"
+                th:hx-confirm="|Delete ${note.title}?|"
+                data-confirm-consequence="The note and every backlink to it are deleted permanently."
                 hx-disabled-elt="this">
             &times;
         </button>

@@ -84,7 +84,7 @@ class EncounterSetupSurfaceTest {
 
     @Test
     void destructiveActionsLiveHereNotOnTheReadSurface() {
-        assertThat(body).contains("hx-confirm=\"Delete this encounter?\"");
+        assertThat(body).contains("hx-confirm=").contains("data-confirm-consequence=");
     }
 
     @Test

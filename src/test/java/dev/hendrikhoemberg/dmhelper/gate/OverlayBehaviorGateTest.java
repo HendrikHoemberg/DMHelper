@@ -73,6 +73,42 @@ class OverlayBehaviorGateTest {
         }
     }
 
+    /**
+     * Spec 14 and 15. Before this gate every destructive action in the product went through
+     * htmx's default {@code window.confirm}, which is not one of the five elevation levels:
+     * no role of ours, no accessible name we control, no focus restoration, no consequence
+     * line. The question has to name the entity and the dialog has to carry the consequence.
+     */
+    @Test
+    void aDestructiveActionOpensTheSharedConfirmationRatherThanABrowserConfirm() {
+        java.util.List<String> deletes = new java.util.ArrayList<>();
+        page.onRequest(request -> {
+            if ("DELETE".equals(request.method())) deletes.add(request.url());
+        });
+
+        page.navigate("http://localhost:" + port + "/campaigns/" + seeded.campaignId() + "/maps");
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        page.locator("[hx-confirm], [data-confirm-consequence]").first().click();
+
+        Locator dialog = page.locator("#confirmDialog");
+        assertThat(dialog.isVisible()).as("the shared confirmation must open").isTrue();
+        assertThat(dialog.getAttribute("role")).isEqualTo("dialog");
+        assertThat(dialog.getAttribute("aria-modal")).isEqualTo("true");
+
+        String question = page.locator("#confirmDialogTitle").textContent().trim();
+        assertThat(question)
+                .as("spec 14: the question names the entity, not 'this map'")
+                .doesNotContain("this map")
+                .startsWith("Delete ");
+        assertThat(page.locator("#confirmDialogConsequence").textContent().trim())
+                .as("spec 14: the dialog states the consequence")
+                .isNotEmpty();
+
+        page.keyboard().press("Escape");
+        assertThat(dialog.isVisible()).as("Escape cancels the confirmation").isFalse();
+        assertThat(deletes).as("cancelling must not issue the request").isEmpty();
+    }
+
     @Test
     void escapeClosesADialogAndRestoresFocusToItsTrigger() {
         page.evaluate("""

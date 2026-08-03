@@ -41,6 +41,9 @@
         triggers.delete(element);
         retrap();
         if (trigger && document.contains(trigger)) trigger.focus();
+        /* Escape and backdrop dismissal go through here too, so anything waiting on an
+           answer (dmConfirm) hears about a close it did not initiate. */
+        element.dispatchEvent(new CustomEvent('dm-overlay-closed', { bubbles: false }));
     }
 
     document.addEventListener('keydown', event => {
@@ -77,6 +80,66 @@
     });
 
     window.dmOverlay = { open, close };
+
+    /* ── Confirmation (spec 14 and 15) ────────────────────────────────────────────
+       window.confirm() is not one of the five elevation levels: it has no accessible
+       name of ours, no focus restoration, no bounded sizing, and no way to carry the
+       consequence line the spec requires. dmConfirm renders the shared dialog instead
+       and resolves a promise, so htmx and hand-written handlers share one contract. */
+    function dmConfirm({ question, consequence = '', acceptLabel = 'Delete' }) {
+        const dialog = document.getElementById('confirmDialog');
+        if (!dialog) return Promise.resolve(window.confirm(question));
+
+        const questionEl = dialog.querySelector('[data-confirm-question]');
+        const consequenceEl = dialog.querySelector('[data-confirm-consequence-text]');
+        const accept = dialog.querySelector('[data-confirm-accept]');
+        const cancel = dialog.querySelector('[data-confirm-cancel]');
+
+        questionEl.textContent = question;
+        consequenceEl.textContent = consequence;
+        /* An empty <p> would still claim aria-describedby and announce nothing. */
+        consequenceEl.hidden = !consequence;
+        accept.textContent = acceptLabel;
+
+        return new Promise(resolve => {
+            function settle(answer) {
+                accept.removeEventListener('click', onAccept);
+                cancel.removeEventListener('click', onCancel);
+                dialog.removeEventListener('dm-overlay-closed', onCancel);
+                close(dialog);
+                resolve(answer);
+            }
+            function onAccept() { settle(true); }
+            function onCancel() { settle(false); }
+
+            accept.addEventListener('click', onAccept);
+            cancel.addEventListener('click', onCancel);
+            /* Escape and the backdrop close through dmOverlay, which does not know it is
+               settling a promise — so listen for the close it broadcasts. */
+            dialog.addEventListener('dm-overlay-closed', onCancel);
+            open(dialog);
+            accept.focus();
+        });
+    }
+
+    window.dmConfirm = dmConfirm;
+
+    /* htmx fires htmx:confirm for every request; detail.question is null unless the
+       element carries hx-confirm. Preventing the event stops htmx's own window.confirm,
+       and issueRequest(true) re-issues it with the check already satisfied. */
+    document.addEventListener('htmx:confirm', event => {
+        const question = event.detail.question;
+        if (!question) return;
+        event.preventDefault();
+        const trigger = event.detail.elt;
+        dmConfirm({
+            question,
+            consequence: trigger.getAttribute('data-confirm-consequence') || '',
+            acceptLabel: trigger.getAttribute('data-confirm-accept') || 'Delete'
+        }).then(confirmed => {
+            if (confirmed) event.detail.issueRequest(true);
+        });
+    });
 
     window.dmToast = {
         show(message, tone = 'neutral') {
