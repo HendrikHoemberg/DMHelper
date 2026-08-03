@@ -1,8 +1,8 @@
 package dev.hendrikhoemberg.dmhelper.gate;
 
 import com.microsoft.playwright.*;
-import com.microsoft.playwright.options.LoadState;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
+import dev.hendrikhoemberg.dmhelper.support.PageReady;
 import dev.hendrikhoemberg.dmhelper.support.ReleaseRehearsalFixture;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,8 +104,7 @@ class ViewportMatrixGateTest {
 
     private void assertNoHorizontalOverflow(String label) {
         for (String path : reviewedPages()) {
-            page.navigate("http://localhost:" + port + path);
-            page.waitForLoadState(LoadState.NETWORKIDLE);
+            PageReady.open(page, "http://localhost:" + port, path);
             int overflow = ((Number) page.evaluate(
                     "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"))
                     .intValue();
@@ -137,8 +136,8 @@ class ViewportMatrixGateTest {
                 .setViewportSize(1440, 900));
         Page reducedPage = reduced.newPage();
         try {
-            reducedPage.navigate("http://localhost:" + port + "/campaigns/" + seeded.campaignId());
-            reducedPage.waitForLoadState(LoadState.NETWORKIDLE);
+            PageReady.open(reducedPage, "http://localhost:" + port,
+                    "/campaigns/" + seeded.campaignId());
             Object animated = reducedPage.evaluate("""
                     () => [...document.querySelectorAll('*')]
                             .filter(el => {
@@ -156,14 +155,19 @@ class ViewportMatrixGateTest {
     @Test
     void requiredRuntimeTextNeverFallsBelowTheMinimumSize() {
         page.setViewportSize(1280, 720);
-        page.navigate("http://localhost:" + port + "/campaigns/" + seeded.campaignId() + "/session");
-        page.waitForLoadState(LoadState.NETWORKIDLE);
+        PageReady.open(page, "http://localhost:" + port,
+                "/campaigns/" + seeded.campaignId() + "/session");
+        /* Module titles count: naming the pane you are reading is required runtime
+           information, not optional provenance (spec 7.2). The utility rank used to set
+           them to --text-xs. */
         Object tooSmall = page.evaluate("""
                 () => [...document.querySelectorAll('.cockpit-module [data-runtime-state],'
-                        + ' .cockpit-module [data-runtime-action]')]
+                        + ' .cockpit-module [data-runtime-action],'
+                        + ' .cockpit-module__header-title, .cockpit-zone__tab-label')]
+                        .filter(el => el.getBoundingClientRect().width > 0)
                         .filter(el => parseFloat(getComputedStyle(el).fontSize) < 14)
-                        .length
+                        .map(el => el.className + ': ' + getComputedStyle(el).fontSize)
                 """);
-        assertThat(((Number) tooSmall).intValue()).isZero();
+        assertThat((List<?>) tooSmall).as("runtime text below --text-sm").isEmpty();
     }
 }

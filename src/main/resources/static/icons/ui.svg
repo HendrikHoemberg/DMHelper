@@ -171,6 +171,10 @@
     <path d="M4 4h16v16H4z"/>
     <path d="M9 4v16M15 4v16"/>
   </symbol>
+  <symbol id="icon-region" viewBox="0 0 24 24">
+    <path d="M4 8l6-4 10 4v12l-6 3-10-4z"/>
+    <path d="M10 4v12l10 4"/>
+  </symbol>
   <symbol id="icon-room" viewBox="0 0 24 24">
     <rect x="4" y="4" width="16" height="16" rx="1"/>
     <path d="M4 10h6M10 4v6"/>

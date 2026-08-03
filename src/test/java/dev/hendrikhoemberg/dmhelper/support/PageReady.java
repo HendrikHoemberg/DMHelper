@@ -29,9 +29,15 @@ public final class PageReady {
      * per-category routes are {@code /library?tab=…}, so the query form has to match too —
      * matching only the bare path would hand the reference gate a page whose result panes are
      * still empty, and its card assertions would measure nothing.
+     *
+     * <p>The map editor belongs here for a second reason: it fetches its map document after
+     * the load event, and navigating away mid-flight aborts that fetch into a console error
+     * that {@code BrowserFailureCollector} reports as a browser-health failure.
      */
     public static boolean settlesAfterLoad(String path) {
-        return path.equals("/library") || path.startsWith("/library?") || path.endsWith("/session");
+        return path.equals("/library") || path.startsWith("/library?")
+                || path.endsWith("/session")
+                || (path.contains("/maps/") && path.endsWith("/edit"));
     }
 
     /** Navigate to {@code base + path} and wait for whichever state that route actually needs. */

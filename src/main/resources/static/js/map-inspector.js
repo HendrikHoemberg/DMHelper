@@ -27,5 +27,10 @@
         setContext(RELEVANCE[event.detail.tool] ?? 'tool');
     });
 
+    /* The declared interface of this module: 'tool' | 'palette' | 'selection' | 'layers'
+       | 'map' | 'pins'. Keyboard tool switches reach it through map-toolchange; anything
+       else that needs to promote a section calls it directly. */
+    window.mapInspector = { setContext };
+
     document.addEventListener('DOMContentLoaded', () => setContext('palette'));
 })();

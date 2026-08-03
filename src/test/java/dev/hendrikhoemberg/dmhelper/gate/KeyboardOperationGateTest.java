@@ -1,8 +1,8 @@
 package dev.hendrikhoemberg.dmhelper.gate;
 
 import com.microsoft.playwright.*;
-import com.microsoft.playwright.options.LoadState;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
+import dev.hendrikhoemberg.dmhelper.support.PageReady;
 import dev.hendrikhoemberg.dmhelper.support.ReleaseRehearsalFixture;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -89,8 +89,7 @@ class KeyboardOperationGateTest {
 
     private void open(String path) {
         page.setViewportSize(1440, 900);
-        page.navigate("http://localhost:" + port + path);
-        page.waitForLoadState(LoadState.NETWORKIDLE);
+        PageReady.open(page, "http://localhost:" + port, path);
     }
 
     @Test

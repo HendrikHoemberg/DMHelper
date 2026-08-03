@@ -17,7 +17,7 @@ class IconSystemContractTest {
             "info", "shield", "eye", "eye-off", "book", "scroll", "map", "swords",
             "users", "user", "castle", "coins", "gem", "note", "calendar", "flag",
             "location", "music", "sparkles", "layers", "brush", "fill", "select",
-            "square", "circle", "line", "polygon", "door", "corridor", "room", "pin",
+            "square", "circle", "line", "polygon", "door", "corridor", "room", "region", "pin",
             "undo", "redo", "download", "upload", "settings", "help", "external-link",
             "grip", "filter", "sort", "star", "clock", "heart", "skull", "concentration");
 

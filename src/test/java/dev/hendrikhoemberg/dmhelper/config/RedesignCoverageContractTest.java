@@ -27,12 +27,18 @@ class RedesignCoverageContractTest {
         }
     }
 
+    /**
+     * Acceptance criterion 3. Selection states are excluded because gold <em>is</em> the
+     * answer to "which one is chosen" (spec 6.3): {@code .card[aria-current="true"]} and
+     * {@code .card.is-selected} are approved uses, not decoration. The exclusion is narrowed
+     * to those three state hooks so an ordinary {@code .card} border still fails.
+     */
     @Test
     void goldIsAbsentFromGenericCardBordersAndDecorativeSeparators() {
         CssRules.of(CssRules.ALL_FILES).stream()
                 .filter(rule -> !rule.file().equals("tokens.css"))
                 .filter(rule -> rule.selector().matches(".*\\.(card|panel|divider|rule|section)\\b.*"))
-                .filter(rule -> !rule.selector().matches(".*(aria-current|is-selected|\\\\.active).*"))
+                .filter(rule -> !rule.selector().matches(".*(aria-current|is-selected|\\.active)\\b.*"))
                 .forEach(rule -> assertThat(
                         String.valueOf(rule.value("border")) + rule.value("border-color"))
                         .as("decorative gold in %s", rule.where())

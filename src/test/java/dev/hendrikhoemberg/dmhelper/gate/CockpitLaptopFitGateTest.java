@@ -1,9 +1,9 @@
 package dev.hendrikhoemberg.dmhelper.gate;
 
 import com.microsoft.playwright.*;
-import com.microsoft.playwright.options.LoadState;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionLifecycleService;
+import dev.hendrikhoemberg.dmhelper.support.PageReady;
 import dev.hendrikhoemberg.dmhelper.support.ReleaseRehearsalFixture;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -70,8 +70,8 @@ class CockpitLaptopFitGateTest {
 
     private void openCockpitWithPreset(String presetKey, int width, int height) {
         page.setViewportSize(width, height);
-        page.navigate("http://localhost:" + port + "/campaigns/" + seeded.campaignId() + "/session");
-        page.waitForLoadState(LoadState.NETWORKIDLE);
+        PageReady.open(page, "http://localhost:" + port,
+                "/campaigns/" + seeded.campaignId() + "/session");
         page.waitForFunction("window.cockpitLayout?.mounted === true");
         page.locator("#cockpitPresetPicker").selectOption(presetKey);
         page.waitForFunction("key => window.cockpitLayout.currentPresetKey === key", presetKey);

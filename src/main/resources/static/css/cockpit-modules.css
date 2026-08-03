@@ -576,8 +576,13 @@
 }
 
 /* ── Module role hierarchy (spec 12.4) ───────────────────────────────────────
-   The role rides on the module body fragment, so the shell keys its chrome off it
-   with :has(): primary leads with a larger heading, utility stays compact. */
+   Each module template declares a default role on its body fragment, picked up here with
+   :has(). Once cockpit-layout.js has placed the shell it sets data-module-rank from the
+   zone, which wins: a module can occupy any zone, and the declared role alone gave Session
+   Review's primary Session Log the tightest chrome in the largest zone.
+
+   No rank drops the heading below --text-sm: a module title is required runtime
+   information, not optional provenance (spec 7.2). */
 .cockpit-module:has([data-module-role="primary"]) {
   --module-role-heading: var(--text-base);
   --module-role-header-pad: 6px 12px;
@@ -587,7 +592,20 @@
   --module-role-header-pad: 4px 10px;
 }
 .cockpit-module:has([data-module-role="utility"]) {
-  --module-role-heading: var(--text-xs);
+  --module-role-heading: var(--text-sm);
+  --module-role-header-pad: 2px 8px;
+}
+/* Same specificity as the role rules above, so source order is what makes the zone win. */
+.cockpit-module[data-module-rank="primary"] {
+  --module-role-heading: var(--text-base);
+  --module-role-header-pad: 6px 12px;
+}
+.cockpit-module[data-module-rank="support"] {
+  --module-role-heading: var(--text-sm);
+  --module-role-header-pad: 4px 10px;
+}
+.cockpit-module[data-module-rank="utility"] {
+  --module-role-heading: var(--text-sm);
   --module-role-header-pad: 2px 8px;
 }
 .cockpit-module .cockpit-module__header {
@@ -596,9 +614,9 @@
 .cockpit-module .cockpit-module__header-title {
   font-size: var(--module-role-heading, var(--text-sm));
 }
-.cockpit-module:has([data-module-role="utility"]) [data-module-content-root] {
-  font-size: 0.92em;
-}
+/* Density in a utility zone comes from the header padding above, not from shrinking the
+   content: 0.92em of --text-sm is 12.9px, and runtime information never goes below
+   --text-sm (spec 7.2). */
 
 /* A module shell that has not been given content yet stacks the empty state with
    its next action, so an unloaded module never reads as a blank pane (spec 12.4). */

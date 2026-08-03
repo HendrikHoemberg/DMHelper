@@ -2,6 +2,14 @@
   'use strict';
 
   const ZONES = ['PRIMARY', 'LEFT_SUPPORT', 'RIGHT_SUPPORT', 'BOTTOM_UTILITY'];
+  /* How much chrome a module gets is a property of the zone it sits in (spec 12.4), so the
+     shell is ranked from here rather than from the module template's declared default. */
+  const ZONE_RANK = {
+    PRIMARY: 'primary',
+    LEFT_SUPPORT: 'support',
+    RIGHT_SUPPORT: 'support',
+    BOTTOM_UTILITY: 'utility'
+  };
   const DEFAULT_KEY = 'builtin:exploration';
   const API_BASE = '/api/v1/cockpit-layout';
   const INVALID_STORAGE_MSG =
@@ -692,6 +700,11 @@
             }
           }
           if (shell) {
+            /* Rank the shell by the zone it is actually in, not by the role its template
+               declares. The declared role is a per-module default, but a module can occupy
+               any zone: Session Log declares "utility" and is the *primary* module of the
+               Session Review preset, which gave the largest zone the tightest chrome. */
+            shell.dataset.moduleRank = ZONE_RANK[zone] || 'support';
             if (def?.compactSupported && compact.has(key) && (selected || stacked)) {
               shell.setAttribute('data-compact', 'true');
             } else {

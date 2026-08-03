@@ -27,8 +27,13 @@
 </button>
 
 <div id="page-content" class="page-content">
-    <section class="card u-mt-lg" data-settings-group="details">
-        <h2>Details</h2>
+    <!-- Spec 11.10 separates identity, progression, package, and danger. Progression has no
+         campaign-level control today: `milestoneLeveling` is persisted on Campaign but is
+         bound by no form and edited nowhere, and adding an editor is a functional change
+         that needs its own spec rather than a redesign task. The other three concerns are
+         separated here; `data` is the legacy v1 package format, kept with `packages`. -->
+    <section class="card u-mt-lg" data-settings-group="identity">
+        <h2>Identity</h2>
         <form th:hx-put="@{/campaigns/{id}(id=${campaign.id})}"
               hx-target="body"
               hx-swap="outerHTML"
