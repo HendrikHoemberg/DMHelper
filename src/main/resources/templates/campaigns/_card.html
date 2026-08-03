@@ -8,7 +8,7 @@
             <path class="campaign-sigil__mark"
                   th:attr="d=${sigil.path},transform=|rotate(${sigil.rotation} 50 50)|"></path>
         </svg>
-        <h3 th:text="${campaign.name}">Campaign Name</h3>
+        <h2 th:text="${campaign.name}">Campaign Name</h2>
         <div class="book-meta" th:text="${campaign.authorLine}">4 heroes · opened 8 July</div>
         <!-- Two distinct signals, per spec 11.1: where the campaign is, and whether it is
              ready to run. Progress is information, not caution, so it never takes the warning

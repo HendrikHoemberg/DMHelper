@@ -6,7 +6,7 @@
 /* overflow: hidden is what makes -webkit-line-clamp clamp. Without it the clamp is inert,
    and because .book-cover is a fixed aspect-ratio box, a three-line campaign name did not
    push the meta line down — it painted over it. */
-.book-cover h3 {
+.book-cover h2 {
   text-transform: none;
   overflow-wrap: anywhere;
   display: -webkit-box;
@@ -460,7 +460,7 @@
     margin-bottom: var(--space-sm);
 }
 
-.readiness-panel__head h3 { margin: 0; font-size: var(--text-base); font-weight: 600; }
+.readiness-panel__head h2 { margin: 0; font-size: var(--text-base); font-weight: 600; }
 
 /* The compact summary spec 11.2 asks Campaign Home for: a row of labelled badges. */
 .readiness-summary {

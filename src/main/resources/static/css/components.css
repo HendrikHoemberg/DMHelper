@@ -2631,7 +2631,7 @@
   border-radius: 2px 6px 6px 2px;
   pointer-events: none;
 }
-.book-cover h3 {
+.book-cover h2 {
   color: var(--action-primary);
   font-size: var(--text-lg);
   line-height: 1.3;

@@ -1,7 +1,7 @@
 <div th:fragment="readiness" class="readiness-panel"
      th:classappend="${readiness.sessionReady()} ? 'is-ready' : 'is-blocked'">
   <header class="readiness-panel__head">
-    <h3>Campaign readiness</h3>
+    <h2 class="readiness-panel__title">Campaign readiness</h2>
     <span class="readiness-badge" th:text="${readiness.label()}">Ready</span>
   </header>
 
