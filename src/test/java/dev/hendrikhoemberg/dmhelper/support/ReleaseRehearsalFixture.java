@@ -49,7 +49,7 @@ public class ReleaseRehearsalFixture {
         BRANCHED_TWO_MAPS
     }
 
-    public record Seeded(UUID campaignId, UUID adventureId, UUID hostileSceneId,
+    public record Seeded(UUID campaignId, UUID emptyCampaignId, UUID adventureId, UUID hostileSceneId,
                          UUID ambushSceneId, UUID branchedEncounterId, UUID branchedMainWaveId,
                          UUID branchedReserveWaveId, List<UUID> branchedReserveCombatantIds,
                          UUID branchSceneId, UUID playableMapId, UUID playerSafeHandoutId,
@@ -123,6 +123,11 @@ public class ReleaseRehearsalFixture {
         campaign.setName("The Hollow Beacon " + suffix);
         campaign.setDescription("Synthetic session rehearsal campaign");
         UUID campaignId = campaigns.save(campaign).getId();
+
+        Campaign emptyCampaign = new Campaign();
+        emptyCampaign.setName("The Quiet Sill " + UUID.randomUUID().toString().substring(0, 8));
+        emptyCampaign.setDescription("Synthetic campaign deliberately left without records");
+        UUID emptyCampaignId = campaigns.save(emptyCampaign).getId();
 
         var adventure = adventures.createAdventure(campaignId, "Lanterns Below",
                 "An invented expedition beneath a quiet marsh beacon.", "Synthetic source");
@@ -294,7 +299,7 @@ public class ReleaseRehearsalFixture {
         partyIds.add(party(campaign, "Nesh Vell", 12, 21, 16));
         partyIds.add(party(campaign, "Tamsin Aroe", 15, 25, 13));
         adventures.setCurrentScene(campaignId, approach.getId());
-        return new Seeded(campaignId, adventure.getId(), hostile.getId(), ambush != null ? ambush.getId() : null,
+        return new Seeded(campaignId, emptyCampaignId, adventure.getId(), hostile.getId(), ambush != null ? ambush.getId() : null,
                 branchedEncounterId, branchedMainWaveId, branchedReserveWaveId, branchedReserveCombatantIds,
                 branch.getId(), map.getId(),
                 playerSafe.getId(), dmSource.getId(), quest.getId(), partyIds);
