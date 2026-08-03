@@ -177,7 +177,9 @@
                settling a promise — so listen for the close it broadcasts. */
             dialog.addEventListener('dm-overlay-closed', onCancel);
             open(dialog);
-            accept.focus();
+            /* Cancel takes focus, not the destructive button: a stray Enter on a confirmation
+               that opened under the cursor should not delete the entity (spec 14). */
+            cancel.focus();
         });
     }
 

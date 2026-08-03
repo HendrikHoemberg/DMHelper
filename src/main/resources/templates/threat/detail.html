@@ -33,7 +33,7 @@
 <div id="page-content" class="page-content" x-data="threatManagement()"
      th:attr="data-campaign-id=${campaignId}">
     <div class="detail-section"
-         th:attr="data-threat-id=${threat.id}, data-api-base=${apiBase}, data-list-href=${listHref}"
+         th:attr="data-threat-id=${threat.id}, data-threat-name=${threat.name}, data-api-base=${apiBase}, data-list-href=${listHref}"
          data-deletion-impact="deletion-impact">
         <div class="detail-description" th:utext="${markdownDescription}"></div>
         <div class="u-mt-lg">

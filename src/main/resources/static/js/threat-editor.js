@@ -309,6 +309,12 @@
             managementLoading: false,
             managementMessage: '',
 
+            /* Confirmations name the entity (spec 14). */
+            threatName() {
+                return document.querySelector('[data-threat-name]')?.dataset.threatName
+                    || 'this threat';
+            },
+
             threatId() {
                 return document.querySelector('[data-threat-id]')?.dataset.threatId || window.THREAT_ID;
             },
@@ -350,7 +356,13 @@
             },
 
             async promoteThreat() {
-                if (!window.confirm('Promote this threat to the global library?')) return;
+                const promote = await window.dmConfirm({
+                    question: 'Promote ' + this.threatName() + ' to the global library?',
+                    consequence: 'The threat becomes available in every campaign and leaves this'
+                        + ' campaign’s threat list.',
+                    acceptLabel: 'Promote'
+                });
+                if (!promote) return;
                 this.managementLoading = true;
                 this.managementMessage = 'Promoting…';
                 try {
@@ -376,10 +388,15 @@
                         this.apiBase() + '/' + this.threatId() + '/deletion-impact');
                     const impact = await impactResponse.json();
                     const count = (impact.dependencies || []).length;
-                    const message = count > 0
-                        ? 'This threat has ' + count + ' dependent link(s). Delete it and clear those references?'
-                        : 'Delete this threat?';
-                    if (!window.confirm(message)) {
+                    const consequence = count > 0
+                        ? 'This threat has ' + count + ' dependent link(s); each reference is'
+                            + ' cleared. The threat itself is deleted permanently.'
+                        : 'The threat is deleted permanently. Nothing currently points at it.';
+                    const confirmed = await window.dmConfirm({
+                        question: 'Delete ' + this.threatName() + '?',
+                        consequence
+                    });
+                    if (!confirmed) {
                         this.managementMessage = '';
                         return;
                     }
