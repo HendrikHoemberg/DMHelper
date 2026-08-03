@@ -96,10 +96,6 @@
   flex-shrink: 0;
   margin-right: 6px;
 }
-.save-indicator.save-saved { color: var(--state-success); }
-.save-indicator.save-saving,
-.save-indicator.save-unsaved { color: var(--state-warning); }
-.save-indicator.save-error { color: var(--state-danger); }
 .hp-input {
   width: 50px;
   padding: 2px 4px;

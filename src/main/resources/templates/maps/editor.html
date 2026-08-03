@@ -23,7 +23,7 @@
                 title="Redo (Ctrl+Shift+Z)" :disabled="!canRedo" @click="redo()">
             <th:block th:replace="~{common/_icon :: icon(name='redo')}"></th:block></button>
         <span class="mapedit__spacer"></span>
-        <span id="saveIndicator" class="save-indicator save-saved">Saved</span>
+        <th:block th:replace="~{fragments/_status :: save-status(id='mapSaveStatus')}"></th:block>
         <button type="button" class="btn" data-command="import" @click="$refs.imageInput.click()">Import</button>
         <input type="file" accept="image/*" x-ref="imageInput" style="display: none;" @change="importImage($event)">
         <button type="button" class="btn" data-command="export" @click="exportPng()">Export</button>
@@ -642,7 +642,7 @@
             gridHeight: /*[[${map.gridHeight}]]*/ 20,
             cellSizePx: /*[[${map.cellSizePx}]]*/ 48,
             statusEl: document.getElementById('statusMessage'),
-            saveIndicatorEl: document.getElementById('saveIndicator'),
+            saveIndicatorEl: document.getElementById('mapSaveStatus'),
             cursorInfoEl: document.getElementById('cursorInfo'),
         });
         window.mapEditor = editor;

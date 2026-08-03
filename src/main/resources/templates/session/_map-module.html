@@ -165,7 +165,7 @@
       <div class="battle-statusbar" aria-live="polite">
         <span id="battleStatusMessage">Ready</span>
         <span id="battleCursorInfo"></span>
-        <span id="battleSaveIndicator" class="save-indicator save-saved">Saved</span>
+        <th:block th:replace="~{fragments/_status :: save-status(id='battleSaveStatus')}"></th:block>
       </div>
 
       <dialog class="cockpit-dialog token-dialog" data-token-dialog

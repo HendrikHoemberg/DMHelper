@@ -1,4 +1,5 @@
-import { drawGrid, setupPanAndZoom, cellPos, snapPixel, pixelToCell } from './shared.js';
+import { drawGrid, setupPanAndZoom, cellPos, snapPixel, pixelToCell,
+         setSaveStatus } from './shared.js';
 import { renderRuntimeDocument } from './runtime-renderer.js';
 
 /**
@@ -1027,17 +1028,11 @@ export class BattleMap {
     }
 
     _setSaved() {
-        if (this.saveIndicatorEl) {
-            this.saveIndicatorEl.textContent = 'Saved';
-            this.saveIndicatorEl.className = 'save-indicator save-saved';
-        }
+        setSaveStatus(this.saveIndicatorEl, 'saved');
     }
 
     _setError() {
-        if (this.saveIndicatorEl) {
-            this.saveIndicatorEl.textContent = 'Save error';
-            this.saveIndicatorEl.className = 'save-indicator save-error';
-        }
+        setSaveStatus(this.saveIndicatorEl, 'error');
     }
 
     /* ---- AoE Templates ---- */

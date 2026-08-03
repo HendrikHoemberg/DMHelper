@@ -526,8 +526,8 @@ class MapEditorBrowserTest {
         page.evaluate("() => window.mapEditor.markDirty()");
 
         page.waitForFunction("""
-                () => document.getElementById('saveIndicator')
-                    ?.textContent === 'Saved'
+                () => document.getElementById('mapSaveStatus')
+                    ?.dataset.saveStatus === 'saved'
                 """);
 
         page.navigate("http://localhost:" + port + "/campaigns/" + campaign.getId() + "/maps");
@@ -1006,7 +1006,7 @@ class MapEditorBrowserTest {
     @SuppressWarnings("unchecked")
     @Test
     void autosaveStateIsVisibleButQuiet() {
-        assertThat(page.isVisible("#saveIndicator")).isTrue();
+        assertThat(page.isVisible("#mapSaveStatus")).isTrue();
         List<String> colors = (List<String>) page.evaluate("""
                 () => {
                   const primaryToken = getComputedStyle(document.documentElement)
@@ -1016,7 +1016,7 @@ class MapEditorBrowserTest {
                   document.body.appendChild(probe);
                   const primary = getComputedStyle(probe).color;
                   probe.remove();
-                  return [getComputedStyle(document.querySelector('#saveIndicator')).color, primary];
+                  return [getComputedStyle(document.querySelector('#mapSaveStatus')).color, primary];
                 }
                 """);
         assertThat(colors.get(0)).as("save state must not use the primary text role")

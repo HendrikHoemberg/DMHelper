@@ -220,3 +220,28 @@ export function expandPrimitives(document) {
     }
     return cells;
 }
+
+/**
+ * Write a save state onto a shared `fragments/_status :: save-status` element.
+ *
+ * <p>Both canvases used to render their own `.save-indicator` span and set a
+ * `save-{state}` class on it. That collided with the htmx indicator of the same name in
+ * components.css — which is `display: none` until a request is in flight — so the editor
+ * carried a `display: inline-block` override just to stay visible, and the colour rules
+ * were duplicated verbatim in cockpit.css and map-editor.css. The shared primitive owns
+ * both now (spec sections 10 and 18.2).
+ */
+export function setSaveStatus(element, state) {
+    if (!element) return;
+    const labels = {
+        idle: 'Saved',
+        unsaved: 'Unsaved…',
+        saving: 'Saving…',
+        saved: 'Saved',
+        error: 'Save failed',
+        conflict: 'Save conflict'
+    };
+    element.dataset.saveStatus = state;
+    const label = element.querySelector('.save-status__label');
+    if (label) label.textContent = labels[state] || state;
+}

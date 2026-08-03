@@ -107,16 +107,6 @@
   min-width: 0;
 }
 
-/* ── Command bar helpers ── */
-.mapedit__commandbar .save-indicator {
-  font-size: var(--text-sm);
-  display: inline-block;   /* components.css hides .save-indicator for htmx; the editor's status must stay visible */
-}
-.save-indicator.save-saved { color: var(--state-success); }
-.save-indicator.save-saving,
-.save-indicator.save-unsaved { color: var(--state-warning); }
-.save-indicator.save-error,
-.save-indicator.save-conflict { color: var(--state-danger); }
 
 /* ── Tool rail and canvas ── */
 

@@ -44,6 +44,20 @@ class MapEditorLayoutContractTest {
         }
     }
 
+    /**
+     * Spec 10 and 18.2: features specialise content, not primitives. The editor used to
+     * render its own {@code .save-indicator} span, which collided with the htmx indicator of
+     * the same name in components.css and duplicated its colour rules in two stylesheets.
+     */
+    @Test
+    void theSaveStateUsesTheSharedStatusPrimitive() throws Exception {
+        String editor = markup();
+        assertThat(editor).contains("_status :: save-status");
+        assertThat(editor)
+                .as("no private copy of the shared save control")
+                .doesNotContain("class=\"save-indicator");
+    }
+
     @Test
     void theInspectorOwnsEverySixSection() throws Exception {
         String editor = markup();

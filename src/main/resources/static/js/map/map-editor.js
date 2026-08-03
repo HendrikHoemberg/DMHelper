@@ -1,6 +1,7 @@
 import { BUILTIN_TERRAIN, DEFAULT_TERRAIN, ERASE_KEY, SHAPE_COLORS } from './terrain-palette.js';
 import { floodFillCells } from './flood-fill.js';
-import { drawGrid, cellPos, snapPt, expandPrimitives, mapPixelBounds, mapSelectionColor } from './shared.js';
+import { drawGrid, cellPos, snapPt, expandPrimitives, mapPixelBounds, mapSelectionColor,
+         setSaveStatus } from './shared.js';
 import { boundsImpact, shapeBounds, fitInsideGeometry, fillCoverGeometry, calibratedImageGeometry } from './geometry.js';
 
 /**
@@ -1767,10 +1768,7 @@ export class MapEditor {
     /* ---- Autosave (debounced, with optimistic version check §5) ---- */
 
     setSaveState(state) {
-        if (!this.saveIndicatorEl) return;
-        const labels = { unsaved: 'Unsaved…', saving: 'Saving…', saved: 'Saved', error: 'Save failed!', conflict: 'Conflict!' };
-        this.saveIndicatorEl.textContent = labels[state] || state;
-        this.saveIndicatorEl.className = `save-indicator save-${state}`;
+        setSaveStatus(this.saveIndicatorEl, state);
     }
 
     /** Triggers a browser download for any URL — an object URL (caller creates/revokes it)

@@ -2892,6 +2892,10 @@
 .save-status[data-save-status="saving"] .save-status__dot { background: var(--state-info); }
 .save-status[data-save-status="saved"] .save-status__dot { background: var(--state-success); }
 .save-status[data-save-status="error"] .save-status__dot { background: var(--state-danger); }
+/* The two canvases autosave, so they also report work in flight and version conflicts.
+   The label carries the meaning; the dot is the second signal (spec 6.4). */
+.save-status[data-save-status="unsaved"] .save-status__dot { background: var(--state-warning); }
+.save-status[data-save-status="conflict"] .save-status__dot { background: var(--state-danger); }
 
 /* hx-indicator regions that collapse out of layout at rest and only appear while a
    request is in flight (htmx adds .htmx-request to the indicator target). Using

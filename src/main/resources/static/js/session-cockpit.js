@@ -573,7 +573,7 @@ function sessionCockpit(config) {
                     movementMode: config.movementMode,
                     showGrid: config.showGrid,
                     statusEl: document.getElementById('battleStatusMessage'),
-                    saveIndicatorEl: document.getElementById('battleSaveIndicator'),
+                    saveIndicatorEl: document.getElementById('battleSaveStatus'),
                     cursorInfoEl: document.getElementById('battleCursorInfo'),
                 });
                 window.battleMap = bm;
