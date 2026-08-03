@@ -538,10 +538,15 @@
   opacity: 1;
 }
 
-/* The zone tab already names the module, so the header bar repeats it. Scoped to the zone
-   panels: in the focus layer and the depot there is no tab, so the title still has to show.
-   The h2 stays in the DOM because the module body is aria-labelledby its id. */
-.cockpit-zone__panel .cockpit-module__header-title { display: none; }
+/* A tabbed zone already names the module in its tab, so the header bar would repeat it.
+   Everywhere else the title has to show: the focus layer and the depot have no tab at all,
+   and a *stacked* support zone hides its tab strip (cockpit-layout.css), so hiding the title
+   there too would leave the pane anonymous — which is what Combat, Theatre of Mind, and
+   Session Review shipped with. The h2 stays in the DOM regardless because the module body is
+   aria-labelledby its id. */
+.cockpit-zone:not([data-zone-mode="stacked"]) .cockpit-zone__panel .cockpit-module__header-title {
+  display: none;
+}
 
 .group-count {
   background: none;

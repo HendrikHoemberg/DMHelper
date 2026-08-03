@@ -11,8 +11,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.util.Map;
-
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -120,6 +118,39 @@ class CockpitLaptopFitGateTest {
         assertThat(page.locator("[data-zone='LEFT_SUPPORT'] [role='tab']").count())
                 .as("story and party share the constrained left zone as tabs")
                 .isGreaterThanOrEqualTo(2);
+    }
+
+    /**
+     * Spec 12.4 and 5.1: a DM has to be able to tell which pane is which. A tabbed zone names
+     * its modules in the tab strip, but a *stacked* support zone hides that strip, so the
+     * module's own header title is the only thing left to name it. Combat, Theatre of Mind,
+     * and Session Review all stack a support zone at 1440x900, and all three shipped with
+     * both the tab and the title hidden.
+     */
+    @Test
+    void everyRenderedModuleShowsItsNameSomewhere() {
+        for (String preset : java.util.List.of("builtin:exploration", "builtin:combat",
+                "builtin:theatre-of-mind", "builtin:session-review")) {
+            openCockpitWithPreset(preset, 1440, 900);
+            Object unnamed = page.evaluate("""
+                    () => {
+                      const visible = el => {
+                        const r = el.getBoundingClientRect();
+                        return r.width > 0 && r.height > 0;
+                      };
+                      const labels = [...document.querySelectorAll(
+                          '.cockpit-module__header-title, .cockpit-zone__tab-label')];
+                      return [...document.querySelectorAll('.cockpit-module')]
+                        .filter(visible)
+                        .map(module => (module.getAttribute('aria-label') || '').trim())
+                        .filter(title => !title || !labels.some(
+                            label => label.textContent.trim() === title && visible(label)));
+                    }
+                    """);
+            assertThat((java.util.List<?>) unnamed)
+                    .as("%s: rendered modules with no visible name", preset)
+                    .isEmpty();
+        }
     }
 
     @Test
