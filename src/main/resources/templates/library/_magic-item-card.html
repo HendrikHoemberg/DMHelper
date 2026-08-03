@@ -1,6 +1,6 @@
 <th:block th:fragment="magic-item-card(item)">
     <div class="ref-card">
-        <h3 class="ref-card__title">
+        <h2 class="ref-card__title">
             <a th:href="@{/library/magic-items/{id}(id=${item.id})}" th:text="${item.name}">Name</a>
         </h3>
         <div class="ref-card__meta">

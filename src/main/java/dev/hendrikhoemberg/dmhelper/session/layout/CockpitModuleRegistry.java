@@ -45,7 +45,7 @@ public final class CockpitModuleRegistry {
                 endpoint("party", "Party", 220, 140,
                         Set.of(CockpitZone.LEFT_SUPPORT, CockpitZone.RIGHT_SUPPORT, CockpitZone.BOTTOM_UTILITY),
                         true, true, "Add party members to this campaign."),
-                endpoint("quick-notes", "Quick notes", 220, 140,
+                endpoint("quick-notes", "Quick notes", 220, 115,
                         Set.of(CockpitZone.RIGHT_SUPPORT, CockpitZone.BOTTOM_UTILITY), true, true,
                         "Capture a note from the command action."),
                 endpoint("reference", "Reference", 260, 220,

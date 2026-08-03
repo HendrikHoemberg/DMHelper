@@ -104,12 +104,35 @@
   font-weight: 600;
 }
 
-.card h3 a {
+/* Index-page card titles sit directly under the page h1, so the heading outline
+   (spec section 17 / release gate 21.10) gives them h2 — same card-title look. */
+.adventure-card h2,
+.encounter-card h2,
+.map-card h2,
+.handout-card h2,
+.sheet-card h2 {
+  font-size: var(--text-lg);
+  margin-bottom: var(--space-xs);
+  font-family: var(--font-ui);
+  font-weight: 600;
+}
+
+.card h3 a,
+.adventure-card h2 a,
+.encounter-card h2 a,
+.map-card h2 a,
+.handout-card h2 a,
+.sheet-card h2 a {
   color: var(--text-primary);
   text-decoration: none;
 }
 
-.card h3 a:hover {
+.card h3 a:hover,
+.adventure-card h2 a:hover,
+.encounter-card h2 a:hover,
+.map-card h2 a:hover,
+.handout-card h2 a:hover,
+.sheet-card h2 a:hover {
   color: var(--text-primary);
 }
 
@@ -1710,7 +1733,7 @@
     padding: 0;
 }
 
-.quicknotes-strip h3 {
+.quicknotes-strip h2 {
     font-size: var(--text-sm);
     color: var(--text-secondary);
     text-transform: uppercase;

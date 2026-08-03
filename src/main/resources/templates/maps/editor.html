@@ -9,6 +9,7 @@
           rail=~{})}">
 <body>
 <div id="page-content" class="mapedit editor-container" x-data="toolbar()">
+    <h1 class="sr-only" th:text="${map.name}">Map</h1>
     <div class="mapedit__commandbar">
         <a class="btn btn-ghost" data-command="back"
            th:href="@{/campaigns/{cid}/maps(cid=${campaignId})}">
@@ -31,7 +32,7 @@
                     title="Keyboard shortcuts" @click="helpOpen = !helpOpen">
                 <th:block th:replace="~{common/_icon :: icon(name='help')}"></th:block></button>
             <div class="shortcuts-panel" x-show="helpOpen" style="display: none;" @click.outside="helpOpen = false">
-                <h3>Keyboard Shortcuts</h3>
+                <h2>Keyboard Shortcuts</h2>
                 <dl>
                     <dt>B</dt><dd>Brush (right-click erases)</dd>
                     <dt>T</dt><dd>Terrain Rect</dd>
@@ -219,7 +220,7 @@
             </div>
 
             <div data-map-control="resize-dialog" x-show="resizeDialogOpen" style="display: none;" x-cloak>
-                <h3 class="mapedit__section-title">Resize Canvas</h3>
+                <h2 class="mapedit__section-title">Resize Canvas</h2>
                 <p class="u-text-xs text-muted">Proposed: <span x-text="gridWidth"></span> × <span x-text="gridHeight"></span></p>
                 <p class="u-text-xs text-muted">Current: <span x-text="resizeOldWidth"></span> × <span x-text="resizeOldHeight"></span></p>
                 <template x-if="resizePreview">
@@ -272,7 +273,7 @@
             </div>
 
             <div data-image-control="background-section" x-show="imagePresent" style="display: none;">
-                <h3 class="mapedit__section-title">Background Image</h3>
+                <h2 class="mapedit__section-title">Background Image</h2>
                 <label class="sidebar-field">X
                     <input type="number" data-image-control="image-x" x-model.number="imageX" @change="updateImageField('x', imageX)" step="0.1" class="u-w-full">
                 </label>

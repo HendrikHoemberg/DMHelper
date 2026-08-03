@@ -8,10 +8,10 @@
                  th:alt="${handout.title}">
         </div>
         <div class="u-flex-1">
-            <h3>
+            <h2>
                 <a th:href="@{/campaigns/{cid}/handouts/{id}/present(cid=${handout.campaign.id},id=${handout.id})}"
                    th:text="${handout.title}">Title</a>
-            </h3>
+            </h2>
             <div class="handout-badges">
                 <th:block th:if="${!handout.dmOnly}">
                     <span th:replace="~{fragments/_badge :: badge(tone='shield', icon='shield', label='Player-safe')}"></span>

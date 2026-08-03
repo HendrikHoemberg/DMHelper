@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <div class="ref-card" th:fragment="spell-card(spell)">
-    <h3 class="ref-card__title">
+    <h2 class="ref-card__title">
         <a th:href="@{/library/spells/{id}(id=${spell.id})}" th:text="${spell.name}">Spell Name</a>
     </h3>
     <div class="ref-card__meta">

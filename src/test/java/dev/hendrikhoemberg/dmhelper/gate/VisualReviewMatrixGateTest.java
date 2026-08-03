@@ -1,6 +1,7 @@
 package dev.hendrikhoemberg.dmhelper.gate;
 
 import com.microsoft.playwright.*;
+import com.microsoft.playwright.options.WaitForSelectorState;
 import dev.hendrikhoemberg.dmhelper.BrowserFailureCollector;
 import dev.hendrikhoemberg.dmhelper.support.ReleaseRehearsalFixture;
 import org.junit.jupiter.api.*;
@@ -151,8 +152,14 @@ class VisualReviewMatrixGateTest {
         page.keyboard().press("Control+k");
         page.screenshot(new Page.ScreenshotOptions().setPath(dir.resolve("command-palette.png")));
         page.keyboard().press("Escape");
+        // The palette's leave transition keeps it a visible modal for a few frames; the
+        // global shortcut manager swallows shortcuts while any modal is visible, so wait
+        // for the close to finish before the next shortcut (Ctrl+R below).
+        page.locator(".command-palette-overlay").waitFor(
+                new Locator.WaitForOptions().setState(WaitForSelectorState.HIDDEN));
         page.keyboard().press("Control+r");
-        assertThat(page.locator("#diceRoller").isVisible()).as("Ctrl+R opened the roller").isTrue();
+        page.locator("#diceRoller").waitFor(
+                new Locator.WaitForOptions().setState(WaitForSelectorState.VISIBLE));
         page.screenshot(new Page.ScreenshotOptions().setPath(dir.resolve("dice-roller.png")));
         page.keyboard().press("Escape");
         page.evaluate("() => window.dmToast.show('Saved', 'success')");

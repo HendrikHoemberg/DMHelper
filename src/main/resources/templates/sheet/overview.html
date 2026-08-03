@@ -45,14 +45,14 @@
     </div>
 
     <div class="card-grid" th:if="${!members.isEmpty()}">
-        <div class="card" th:each="pm : ${members}"
+        <div class="card sheet-card" th:each="pm : ${members}"
              th:classappend="${!pm.active} ? 'pm-inactive' : ''">
             <div class="pm-checkbox">
                 <input type="checkbox" class="member-select" th:value="${pm.id}"
                        th:attr="data-active=${pm.active}"
                        th:id="'sel-' + ${pm.id}">
             </div>
-            <h3 th:text="${pm.characterName}">Character Name</h3>
+            <h2 th:text="${pm.characterName}">Character Name</h2>
             <div class="pm-player">
                 <span th:if="${pm.classAndLevel != null and !pm.classAndLevel.isBlank()}"
                       th:text="${pm.classAndLevel}"></span>

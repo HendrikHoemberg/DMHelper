@@ -1,6 +1,6 @@
 <th:block th:fragment="rule-card(rule)">
     <div class="ref-card">
-        <h3 class="ref-card__title">
+        <h2 class="ref-card__title">
             <a th:href="@{/library/rules/{id}(id=${rule.id})}" th:text="${rule.name}">Rule Name</a>
         </h3>
         <div class="ref-card__meta">

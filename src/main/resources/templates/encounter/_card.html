@@ -1,16 +1,16 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<div class="card" th:fragment="card(encounter, campaignId)"
+<div class="card encounter-card" th:fragment="card(encounter, campaignId)"
      th:attr="data-encounter-card=${true},
               data-encounter-id=${encounter.id},
               data-encounter-name=${encounter.name},
               data-encounter-status=${encounter.status},
               data-encounter-round=${encounter.round},
               data-encounter-search=${encounter.name} + ' ' + ${encounter.status}">
-    <h3>
+    <h2>
         <a th:href="@{/campaigns/{cid}/encounters/{eid}(cid=${campaignId}, eid=${encounter.id})}"
            th:text="${encounter.name}">Encounter Name</a>
-    </h3>
+    </h2>
     <div class="card-meta">
         <span class="badge"
               th:classappend="${encounter.status == 'ACTIVE'} ? 'badge--warning' :

@@ -13,7 +13,7 @@ public final class CockpitBuiltInPresetCatalog {
                     zone("quick-notes", "audio", "reference"),
                     Set.of("session-plan", "party", "audio", "reference")),
             preset("builtin:combat", "Combat",
-                    new CockpitLayoutDocument.SplitRatios(0.18, 0.52, 0.30, 0.20),
+                    new CockpitLayoutDocument.SplitRatios(0.18, 0.52, 0.30, 0.16),
                     zone("map"), zone("story", "party"), zone("encounter"),
                     zone("quick-notes", "reference", "audio", "session-log"),
                     Set.of("story", "party", "quick-notes", "reference", "audio", "session-log")),

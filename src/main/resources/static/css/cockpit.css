@@ -260,6 +260,12 @@
   [data-cockpit-commandbar] [data-command-slot="in-game-date"] {
     display: none;
   }
+  /* Below 1120px the eight command slots leave only a few pixels of slack on the
+     "More" control (measured at 1366x768@125%). Shrink the campaign identity instead of
+     dropping slots: it truncates with an ellipsis, so no control loses reachability. */
+  [data-cockpit-commandbar] .cockpit-topbar__title {
+    max-width: 15rem;
+  }
 }
 
 /* Module-body content chrome (layout structure lives in cockpit-layout.css). */

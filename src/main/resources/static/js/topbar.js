@@ -44,10 +44,3 @@ document.addEventListener('click', async (e) => {
 
     setTimeout(() => tooltip.remove(), 3000);
 });
-
-document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.key === 'r') {
-        e.preventDefault();
-        window.dispatchEvent(new CustomEvent('dice-roller-toggle'));
-    }
-});

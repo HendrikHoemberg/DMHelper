@@ -100,11 +100,27 @@ class KeyboardOperationGateTest {
             open(path);
             Object invisible = page.evaluate("""
                     () => {
+                      const effectivelyVisible = (el) => {
+                        if (el.offsetParent === null) return false;
+                        const style = getComputedStyle(el);
+                        if (style.visibility !== 'visible') return false;
+                        const r = el.getBoundingClientRect();
+                        if (r.width <= 0 || r.height <= 0) return false;
+                        // A closed <details> hides its content group via content-visibility;
+                        // descendants keep an offsetParent and non-zero rects but are not
+                        // keyboard-reachable, so a collapsed row/menu is not a focus target.
+                        let d = el.closest('details');
+                        while (d) {
+                          if (!d.open) return false;
+                          d = d.parentElement.closest('details');
+                        }
+                        return true;
+                      };
                       const focusable = [...document.querySelectorAll(
-                        'button:not([disabled]), [href], input:not([disabled]), '
+                        'button:not([disabled]), a[href], input:not([disabled]), '
                         + 'select:not([disabled]), textarea:not([disabled]), '
                         + '[tabindex]:not([tabindex="-1"])')]
-                        .filter(el => el.offsetParent !== null);
+                        .filter(effectivelyVisible);
                       const bad = [];
                       for (const el of focusable) {
                         el.focus();

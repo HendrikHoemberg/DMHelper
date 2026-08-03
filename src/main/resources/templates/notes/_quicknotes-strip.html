@@ -4,9 +4,9 @@
 <div x-data="quicknotes"
      th:attr="data-campaign-id=${campaignId},data-target-type=${targetType},data-target-id=${targetId}"
      class="quicknotes-strip">
-    <h3>
+    <h2>
         Quick Notes
-    </h3>
+    </h2>
 
     <form @submit.prevent="add()" class="quicknotes-form">
         <input type="text" aria-label="New quick note" x-model="newBody" placeholder="Jot a quick note...">

@@ -1,6 +1,6 @@
 <th:block th:fragment="species-card(species)">
     <div class="ref-card">
-        <h3 class="ref-card__title">
+        <h2 class="ref-card__title">
             <a th:href="@{/library/species/{id}(id=${species.id})}" th:text="${species.name}">Species Name</a>
         </h3>
         <div class="ref-card__meta">

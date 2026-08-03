@@ -1,6 +1,6 @@
 <th:block th:fragment="condition-card(condition)">
     <div class="ref-card">
-        <h3 class="ref-card__title">
+        <h2 class="ref-card__title">
             <a th:href="@{/library/conditions/{id}(id=${condition.id})}" th:text="${condition.name}">Condition Name</a>
         </h3>
         <div class="ref-card__meta">

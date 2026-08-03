@@ -1,6 +1,6 @@
 <th:block th:fragment="class-card(clz)">
     <div class="ref-card">
-        <h3 class="ref-card__title">
+        <h2 class="ref-card__title">
             <a th:href="@{/library/classes/{key}(key=${clz.sourceKey})}" th:text="${clz.name}">Class Name</a>
         </h3>
         <div class="ref-card__meta">

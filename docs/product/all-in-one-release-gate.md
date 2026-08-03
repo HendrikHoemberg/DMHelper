@@ -41,6 +41,8 @@ Run the full release gate; this command must pass before the all-in-one premise 
 | Keyboard: edit mode, tabs, focus/restore, splitters | `ViewportAccessibilityGateTest#keyboardUsersCanDriveTheWorkspace` |
 | Focus visible and restored after dialogs | `ViewportAccessibilityGateTest#focusIsVisibleAndRestoredAfterAFocusedLayer` |
 | Reduced motion respected | `ViewportAccessibilityGateTest#reducedMotionIsRespected`, `MotionBudgetContractTest` |
+| Every reviewed page survives every supported viewport and zoom gate; reduced motion; minimum runtime text size | `ViewportMatrixGateTest` |
+| Product-wide keyboard operation: visible focus, accessible icon-only names, logical landmarks and headings | `KeyboardOperationGateTest` |
 
 ## §11.3 Representative release rehearsal
 
@@ -67,6 +69,27 @@ reviewed exclusion vocabulary currently named in that test (`phandelver`, `klarg
 `wave echo`, `sildar`, `gundren`, `rockseeker`, `neverwinter`, and `tresendar`). This is a
 bounded regression check for the known published vocabulary and fixture content under review,
 not an unbounded guarantee about every possible published campaign.
+
+## §21 Whole-product redesign gates
+
+Added by the whole-product UI redesign
+(`docs/superpowers/plans/2026-07-31-whole-product-ui-redesign.md`, Tasks 19, 33, 37, 41, 45,
+51, 52). Each gate is `@Tag("browser")` and runs under `-P gates`; the machine-checkable half
+of the acceptance criteria is asserted by `RedesignCoverageContractTest` (spec §21, criteria
+1–3 and 11).
+
+| Gate | Proves |
+|---|---|
+| `ShellRenderGateTest` | One app-shell implementation renders every page: no horizontal scroll at any supported viewport, the library composes cleanly once its panes load, and the rail stays usable expanded at 1280×720 |
+| `OverlayBehaviorGateTest` | Overlays (spec §15): every blocking level traps and restores focus, Escape closes and restores focus to the trigger, side sheets open in place, and stacked traps restore down the stack |
+| `NarrativePreparationRenderGateTest` | Narrative surfaces: campaign home shows current state above the fold and scene narrative stays within a readable measure |
+| `OperationalPreparationRenderGateTest` | Operational surfaces: encounter-setup controls are not micro controls and stay inside their own field at 1280×720, and the active combatant is distinguishable by more than color |
+| `ReferenceWorkspaceRenderGateTest` | Reference workspace: every library category renders its own title with the same card grid and aligned metadata rows |
+| `MapEditorRenderGateTest` | Map editor: nothing essential clips at the minimum viewport |
+| `CockpitLaptopFitGateTest` | Cockpit laptop fit (spec §12.4): every built-in preset fits without document scroll or clipped chrome, support modules become tabs when their zone is constrained, and primary runtime actions stay visible |
+| `ViewportMatrixGateTest` | Product-wide viewport matrix (spec §4): every reviewed page survives every supported viewport and the 125%/150% zoom gates across the primary range, with reduced motion and the minimum runtime text size |
+| `KeyboardOperationGateTest` | Product-wide keyboard operation: every focusable control paints a visible focus indicator, icon-only controls carry accessible names, and landmarks and heading order are logical |
+| `VisualReviewMatrixGateTest` | Captures the visual review matrix (spec §20.3): populated states for every surface, empty states from the unseeded campaign, and overlay/transient surfaces |
 
 ## §10 Visual system
 

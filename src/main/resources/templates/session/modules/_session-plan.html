@@ -25,7 +25,7 @@
         </div>
         <th:block th:if="${mode != null and mode.name() == 'COMPACT'}">
           <div class="plan-upcoming" th:if="${view.upcoming != null}">
-            <h4 class="u-text-xs text-muted">Upcoming</h4>
+            <h3 class="u-text-xs text-muted">Upcoming</h3>
             <div th:each="beat : ${view.upcoming}" class="plan-upcoming-beat u-text-xs">
               <span th:text="${beat.type}">Type</span>
               <span th:text="${beat.label}">Label</span>
@@ -41,7 +41,7 @@
       </th:block>
       <th:block th:if="${view != null and view.questProgress != null and !view.questProgress.isEmpty()}">
         <div class="quest-progress-summary quest-progress-panel" data-quest-progress>
-          <h4 class="u-text-xs text-muted">Quest Progress</h4>
+          <h3 class="u-text-xs text-muted">Quest Progress</h3>
           <div th:each="qp : ${view.questProgress}" class="quest-progress-item u-text-sm">
             <span class="badge" th:text="${T(dev.hendrikhoemberg.dmhelper.common.web.DisplayLabels).humanize(qp.status)}">STATUS</span>
             <span th:text="${qp.title}">Quest</span>

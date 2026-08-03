@@ -12,8 +12,9 @@ player-facing presentation, overlays, feedback, accessibility, and desktop adapt
 
 This is the authoritative visual and interaction design for DMHelper.
 
-- It fully supersedes `docs/ui-polish-spec.md`, including that document's requirements
-  to reuse the existing brown palette and exclude responsive or adaptive layout work.
+- It fully supersedes the former `ui-polish-spec` document (deleted at Task 53), including
+  that document's requirements to reuse the existing brown palette and exclude responsive
+  or adaptive layout work.
 - It supersedes the visual-system requirements in older corrective specifications when
   they conflict with this document.
 - Functional, safety, persistence, campaign-package, player-projection, and runtime

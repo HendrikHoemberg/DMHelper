@@ -17,10 +17,10 @@
                  th:each="a : ${adventures}"
                  th:attr="data-adventure-search=${(a.adventure.name ?: '') + ' ' + (a.adventure.description ?: '')}">
             <div class="card-header">
-                <h3>
+                <h2>
                     <a th:href="@{/campaigns/{cid}/adventures/{id}(cid=${campaignId},id=${a.adventure.id})}"
                        th:text="${a.adventure.name}">Adventure</a>
-                </h3>
+                </h2>
                 <span class="badge" th:if="${a.sceneCount > 0}"
                       th:text="|${a.doneCount}/${a.sceneCount} done|">0/0 done</span>
                 <span class="badge badge--warning" th:if="${currentScene != null and currentScene.chapter.adventure.id == a.adventure.id}"

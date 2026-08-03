@@ -85,7 +85,7 @@ class CampaignAdminSurfaceTest {
         var document = Jsoup.parse(rendered);
         var panel = document.selectFirst(".readiness-panel");
         assertThat(panel).isNotNull();
-        assertThat(panel.selectFirst("h3").text()).isEqualTo("Campaign readiness");
+        assertThat(panel.selectFirst("h2").text()).isEqualTo("Campaign readiness");
         assertThat(panel.selectFirst(".readiness-badge").text()).isEqualTo("Not ready — 4 blockers");
         assertThat(panel.selectFirst(".readiness-panel__intro").text())
                 .contains("Resolve these blockers")
