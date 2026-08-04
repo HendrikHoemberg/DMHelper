@@ -1,4 +1,4 @@
-package dev.hendrikhoemberg.dmhelper.campaign.packagev2.service;
+package dev.hendrikhoemberg.dmhelper.support;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;

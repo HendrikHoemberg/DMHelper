@@ -1,4 +1,4 @@
-package dev.hendrikhoemberg.dmhelper.campaign.packagev2.service;
+package dev.hendrikhoemberg.dmhelper.support;
 
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.SessionDto;

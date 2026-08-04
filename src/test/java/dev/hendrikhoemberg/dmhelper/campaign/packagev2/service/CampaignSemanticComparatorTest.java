@@ -1,6 +1,8 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.service;
 
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
+import dev.hendrikhoemberg.dmhelper.support.CampaignSemanticComparator;
+import dev.hendrikhoemberg.dmhelper.support.CampaignSemanticSnapshot;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.json.JsonMapper;
 
