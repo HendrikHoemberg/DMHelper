@@ -556,15 +556,16 @@ Delete the matching `@Test` methods in full. Tests covering `create`, `update`, 
 
 - [ ] **Step 5: Fix CampaignCascadeDeleteTest**
 
-`CampaignCascadeDeleteTest.java:88-91` imports v1 validators into its test context:
+`CampaignCascadeDeleteTest.java:88-91` imports the v1 validation stack into its test context. All **four** entries go — `CampaignCatalogResolver` on line 90 is deleted by Task 8 along with the other three:
 
 ```java
          dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator.class,
          dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSchemaValidator.class,
+         dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignCatalogResolver.class,
          dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSemanticValidator.class,
 ```
 
-Remove those three entries from the `@Import` (or equivalent) list. Read the surrounding lines first — line 90 sits between them and may be a class that stays.
+Remove all four from the `@SpringBootTest(classes = {...})` list. Line 87 (`ContentDestinationRegistry`) and line 92 (`WorldService` and friends) stay.
 
 - [ ] **Step 6: Run the suite**
 
@@ -598,9 +599,12 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 ### Task 7: Remove the v1 migration path from the package pipeline
 
+Per spec §5.3, `ContainerKind.V1_JSON` is removed outright. Recognition of v1 files is not needed to produce a clean error: `CampaignPackageReader.readJson` already has an `UNSUPPORTED_FORMAT_VERSION` default arm, so deleting the `case 1 ->` line makes `formatVersion: 1` fall into it. That arm throws `CampaignPackageException` wrapping a `CampaignImportProblem` (`CampaignPackageReader.java:182-183`), which is caught at line 47 and surfaced as a problem — a readable message, not a stack trace. The pipeline never sees the file.
+
 **Files:**
-- Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/campaign/packagev2/validation/CampaignPackageValidationPipeline.java:29,36,41,44-67`
-- Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/campaign/packagev2/io/StagedCampaignPackage.java`
+- Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/campaign/packagev2/validation/CampaignPackageValidationPipeline.java:6,9,28-29,35-36,40-41,44-67,101-105`
+- Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/campaign/packagev2/io/StagedCampaignPackage.java:13`
+- Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/campaign/packagev2/io/CampaignPackageReader.java:74`
 - Delete: `src/main/java/dev/hendrikhoemberg/dmhelper/campaign/packagev2/migration/LegacyV1ToV2Migration.java` (486)
 - Delete: `src/main/java/dev/hendrikhoemberg/dmhelper/campaign/packagev2/migration/FormatMigrationRegistry.java` (45)
 - Delete: `src/main/java/dev/hendrikhoemberg/dmhelper/campaign/packagev2/validation/CampaignFormatMigration.java` (10)
@@ -608,7 +612,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: nothing from Task 6.
-- Produces: `CampaignPackageValidationPipeline` with a three-argument constructor `(CampaignManifestV2SchemaValidator, CampaignManifestV2SemanticValidator, CampaignCatalogService)`. A `.dmcampaign.json` declaring `formatVersion: 1` now fails with `ImportProblemCodes.UNSUPPORTED_FORMAT_VERSION`.
+- Produces: `CampaignPackageValidationPipeline` with a three-argument constructor `(CampaignManifestV2SchemaValidator, CampaignManifestV2SemanticValidator, CampaignCatalogService)`. A `.dmcampaign.json` declaring `formatVersion: 1` is rejected by `CampaignPackageReader` with `ImportProblemCodes.UNSUPPORTED_FORMAT_VERSION`.
 
 - [ ] **Step 1: Simplify the pipeline's validate method**
 
@@ -644,27 +648,34 @@ Delete the `migrations` and `v1Validator` fields (lines 28-29), their constructo
     }
 ```
 
-- [ ] **Step 3: Keep the unsupported-version path reachable**
+Also delete the now-unused imports on lines 6 (`FormatMigrationRegistry`) and 9 (`CampaignImportValidator`).
 
-`unsupported(...)` (lines 101-105) was only called from the deleted V1 branch. It must stay reachable so a v1 file gets a clean error rather than a schema-violation stack of noise. Add an explicit guard immediately after reading the manifest JSON in Step 1's block:
+- [ ] **Step 3: Delete the now-dead `unsupported` helper**
 
-```java
-            if (staged.containerKind() == StagedCampaignPackage.ContainerKind.V1_JSON) {
-                return unsupported(staged, 1);
-            }
+`unsupported(...)` (lines 101-105) had exactly one caller, the V1 branch deleted in Step 1. With the reader rejecting v1 files before staging completes, nothing else can reach it. Delete the method.
+
+Confirm before deleting:
+
+```bash
+grep -n "unsupported(" src/main/java/dev/hendrikhoemberg/dmhelper/campaign/packagev2/validation/CampaignPackageValidationPipeline.java
 ```
 
-Place this **before** `schema.validate(json)`, so a v1 file is rejected by version rather than by failing v2 schema validation.
+Expected: only the declaration remains after Step 1. If a second caller appears, keep the method and note why.
 
-- [ ] **Step 4: Decide the fate of ContainerKind.V1_JSON**
+- [ ] **Step 4: Remove the V1_JSON container kind**
 
-The variant must survive for Step 3's guard to distinguish v1 files. Confirm how it is assigned:
+Two edits, in this order:
+
+1. `CampaignPackageReader.java:74` — delete the line `case 1 -> StagedCampaignPackage.ContainerKind.V1_JSON;`. `formatVersion: 1` now falls to the existing `default ->` arm, which throws `UNSUPPORTED_FORMAT_VERSION`.
+2. `StagedCampaignPackage.java:13` — remove `V1_JSON` from the enum, leaving `{ V2_JSON, V3_JSON, V2_ZIP }`.
+
+Then confirm the variant is gone everywhere:
 
 ```bash
 grep -rn "V1_JSON" src/main src/test
 ```
 
-Keep the variant and whatever detection logic sets it. Only the *migration* is removed, not the *recognition* — recognising a v1 file is what produces the clean error message.
+Expected: no output. Any test hit is a v1 test being deleted in Task 8 — remove it there, or here if it blocks compilation.
 
 - [ ] **Step 5: Delete the migration classes**
 
@@ -677,29 +688,29 @@ git rm src/main/java/dev/hendrikhoemberg/dmhelper/campaign/packagev2/migration/L
 
 - [ ] **Step 6: Add a test that a v1 file is cleanly rejected**
 
-In `src/test/java/dev/hendrikhoemberg/dmhelper/campaign/packagev2/validation/CampaignPackageValidationPipelineTest.java` (create it if absent), add:
+The rejection now happens at read time, so the test drives `CampaignPackageReader`, not the pipeline. Add to the existing `CampaignPackageReaderTest` (find it first; create it only if absent):
 
 ```java
     @Test
     void v1JsonIsRejectedWithUnsupportedFormatVersion() {
-        StagedCampaignPackage staged = stageV1Json("""
-                {"formatVersion":1,"campaign":{"name":"Legacy"}}""");
+        byte[] bytes = """
+                {"formatVersion":1,"campaign":{"name":"Legacy"}}"""
+                .getBytes(StandardCharsets.UTF_8);
 
-        CampaignPackageValidationResult result = pipeline.validate(staged);
-
-        assertThat(result.valid()).isFalse();
-        assertThat(result.problems())
-                .extracting(CampaignImportProblem::code)
-                .containsExactly(ImportProblemCodes.UNSUPPORTED_FORMAT_VERSION);
+        assertThatThrownBy(() -> reader.read(
+                new ByteArrayInputStream(bytes), "legacy.dmcampaign.json", "application/json"))
+                .isInstanceOf(CampaignPackageException.class)
+                .extracting(e -> ((CampaignPackageException) e).problem().code())
+                .isEqualTo(ImportProblemCodes.UNSUPPORTED_FORMAT_VERSION);
     }
 ```
 
-Implement `stageV1Json` to write the string to a temp file and build a `StagedCampaignPackage` with `ContainerKind.V1_JSON`. Read `StagedCampaignPackage`'s constructor before writing it — the field list is short but it is a record, so the argument order matters.
+Read `CampaignPackageReader`'s public entry point and `CampaignPackageException`'s accessor before writing this — the signatures above are the expected shape, not verified text. Match the real ones; do not add accessors to make this compile.
 
 - [ ] **Step 7: Run the test, then the suite**
 
 ```bash
-./mvnw test -Dtest='CampaignPackageValidationPipelineTest'
+./mvnw test -Dtest='CampaignPackageReaderTest'
 ./mvnw test -P gates
 ```
 
@@ -711,10 +722,11 @@ Expected: PASS, then BUILD SUCCESS.
 git add -A
 git commit -m "feat!: remove the v1-to-v2 campaign migration path
 
-v1 files are now recognised and rejected with UNSUPPORTED_FORMAT_VERSION
-rather than migrated. Removes LegacyV1ToV2Migration, FormatMigrationRegistry
-and the CampaignFormatMigration interface, and drops the double semantic
-validation v1 files previously incurred.
+A .dmcampaign.json declaring formatVersion 1 is now rejected at read time
+with UNSUPPORTED_FORMAT_VERSION rather than migrated. Removes the V1_JSON
+container kind, LegacyV1ToV2Migration, FormatMigrationRegistry and the
+CampaignFormatMigration interface, and drops the double semantic validation
+v1 files previously incurred.
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
@@ -739,6 +751,18 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 **Interfaces:**
 - Consumes: Task 4's rewritten map-document test; Tasks 5-7 having removed all production callers.
 - Produces: a codebase with exactly one campaign format.
+
+> **Scope note — beyond the spec's delete list.** Spec §5.2 does not list
+> `map-document.schema.json`. Deleting it also withdraws the served endpoint
+> `GET /api/v1/schemas/map-document.schema.json`, which is a fifth capability
+> withdrawal on top of the four the spec names. It is included here because the file
+> is v1-only: its sole code consumer is `CampaignSchemaValidator` (`:20,26`), the only
+> other reference is a `$ref` from `campaign-format.schema.json` (`:169`, also deleted),
+> and v2 is served the equivalent shape at `/api/v1/schemas/map-document-v2.schema.json`.
+> Serving a schema that describes a format the application can no longer read is a
+> manifest that lies. Step 2 verifies the assumption before acting; if `docs/agent/`
+> publishes the v1 URL as an external contract, **stop and raise it** rather than
+> deleting. Record the withdrawal in Task 17 and in the Completion section.
 
 - [ ] **Step 1: Confirm no production code references the stack**
 
@@ -806,7 +830,7 @@ Delete those two test methods. The v2 assertions at lines 55 and 64 stay untouch
 grep -rn "ImportProblemCodes\." src/main/ | grep -o "ImportProblemCodes\.[A-Z_]*" | sort -u
 ```
 
-Compare against the constants declared in the file and delete any that no longer appear in `src/main`. Do this conservatively — a code raised from a template or referenced in `docs/authoring/validation-errors.md` is still live. **`UNSUPPORTED_FORMAT_VERSION` is raised by Task 7's guard and must stay.**
+Compare against the constants declared in the file and delete any that no longer appear in `src/main`. Do this conservatively — a code raised from a template or referenced in `docs/authoring/validation-errors.md` is still live. **`UNSUPPORTED_FORMAT_VERSION` is raised by `CampaignPackageReader`'s default arm (Task 7) and must stay.**
 
 - [ ] **Step 7: Run the suite**
 
@@ -929,6 +953,40 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 **Before starting this stage:** the workbench template already server-renders the four-zone Exploration layout and is documented as "no-JS usable" (`_cockpit-workbench.html:4`). Several layout-edit controls in `cockpit.html` are already rendered `disabled aria-disabled="true"`. Much of this stage is deleting controls that are already inert.
 
+## How a preset switch actually works
+
+Spec §6.1 defines a preset as "a CSS class on the cockpit root **plus a server-rendered module-to-zone assignment**." Both halves are load-bearing, and the second one has a mechanism that already exists. Read this before touching Tasks 11-13.
+
+`_cockpit-workbench.html` server-renders **only** the Exploration placement — `session-plan` in LEFT_SUPPORT, `story` in PRIMARY, `party` in RIGHT_SUPPORT, `quick-notes`/`audio`/`reference` in BOTTOM_UTILITY — and parks the other three module shells (`map`, `encounter`, `session-log`) in a hidden `[data-cockpit-depot]` (`:159-169`). Combat needs `map` in PRIMARY and `story`+`party` in LEFT_SUPPORT. **A CSS class cannot move a DOM node between two zone containers.** Something has to relocate the shells.
+
+That something already exists and is retained: `renderLayout()` (`cockpit-layout.js:589-789`) walks the four zones, moves module shells between the depot and each zone's `[data-zone-panels]`, and builds the tab strip. It is driven by `window.cockpitLayoutConfig.presets`, which `cockpit.html:194-201` already serializes from the `cockpitPresets` model attribute via `th:inline="javascript"`. Once Task 11 reshapes `BuiltInPreset` to carry `moduleKeysByZone`, that assignment reaches the client for free. **No new mechanism, no new endpoint, no new model attribute.**
+
+### What the rewritten cockpit-layout.js keeps
+
+These are module *content* and *navigation* behaviours. Spec §6.4 leaves module content untouched, and §6.1 withdraws only docking, custom presets, split ratios, and schema versioning with repair — none of these:
+
+| Behaviour | Current location | Why it stays |
+|---|---|---|
+| Module placement into zones + tab strip construction | `renderLayout()` :589-789 | Without it only Exploration ever renders |
+| Tab selection | `selectTab()` :856, click handler :148-153 | `CockpitReferenceBrowserTest:82,105,146` and `CockpitModuleInitialLoadBrowserTest:140` click `[data-module-tab]`; both are retained by spec §7.1 |
+| Roving-tabindex arrow navigation between tabs | `bindTabKeyboard()` :232-265 | `KeyboardOperationGateTest` is retained; tabs must stay keyboard-operable |
+| Focus layer (focus a module, return to layout) | `bindFocusChrome()` :433-472, `_cockpit-workbench.html:172-177`, `_cockpit-module-shell.html:20` | Not in §6.1's removal list; `CockpitRuntimeModuleController:148` still serves `FOCUSED` mode |
+| Module loading/empty/error messages | :1606-1614, reading `def.states` | Module content per §6.4 |
+| Per-zone collapse | `toggleBottomUtility()` :947 generalised to all four zones | Explicitly retained by §6.1 |
+| Digit-key preset shortcuts | `bindPresetShortcuts()` :211-232 | Explicitly retained by §6.1 |
+
+### What it loses
+
+`bindEditInteractions` (:272-423), `bindSplitters` (:423-433), `syncEditChrome`, `syncSplitterAria`, `clampRatios`, `resize`/`onSplitterKey`/`resizeToBound`/`onSplitterPointerDown`/`splitterBounds`/`workbenchMetrics` (:1230-1500+), `moveModule`/`reorderModule`/`removeModule`/`addModule`, `openArrangeMenu`/`closeArrangeMenu`, `openAddModuleDialog`/`closeAddModuleDialog`, `assertEditing`, `prepareLayoutMutation`, `allowedZonesFor`, `ensureZoneLayout`, `repairActive`, `maybeOfferDraftRecovery`, every `API_BASE` fetch, and all compact-mode plumbing.
+
+### Corrected size projection
+
+**Spec §6.3 projects `cockpit-layout.js` at 2,246 → ~200 and §10 counts −2,498 static lines. That projection is wrong** — it was made without accounting for module relocation and tab construction, and `renderLayout()` alone is ~200 lines. The realistic target is **2,246 → ~600**, and the static total for Stage 3 becomes ~2,100 rather than 2,498.
+
+Spec §10 marks `~` figures as "projections for code being rewritten rather than deleted," so revising one is within the spec's own terms. **No requirement is repealed and no behaviour changes** — the four presets, the shortcuts, and per-zone collapse are all still delivered. Update the spec's §6.3 and §10 figures when Stage 3 lands, and use ~600 as the Completion target instead of the spec's number.
+
+If the finished file lands materially above ~700 lines, something on the "loses" list survived — check it before committing.
+
 ### Task 10: Drop the preset persistence layer
 
 **Files:**
@@ -981,7 +1039,14 @@ In `SessionController.java`:
         model.addAttribute("cockpitPresets", cockpitPresets.all());
 ```
 
-The template iterates `${cockpitPresets}` reading `preset.key` and `preset.name` (`cockpit.html:52-55`). `CockpitBuiltInPresetCatalog.BuiltInPreset` must expose both accessors — verify before compiling, and if the record names differ, adjust the template rather than adding a shim.
+`cockpitPresets` has **two** consumers in `cockpit.html`, not one:
+
+1. `:52-55` — the `<option>` loop, reading `preset.key` and `preset.name`.
+2. `:197` — `window.cockpitLayoutConfig.presets`, serialized wholesale by `th:inline="javascript"`. This is how the module-to-zone assignment reaches the client (see the stage preamble). It needs no edit, but it is why `BuiltInPreset` must be JSON-serializable and why Task 11's `moduleKeysByZone` is not dead data.
+
+`CockpitBuiltInPresetCatalog.BuiltInPreset` must expose `key()` and `name()` — verify before compiling, and if the record names differ, adjust the template rather than adding a shim.
+
+Note that the old `PresetDto` carried a `builtIn` flag that `cockpit-layout.js:23-27` filtered on. Every preset is built-in now; Task 12 drops that filter rather than synthesising the flag.
 
 - [ ] **Step 4: Delete the persistence classes and their tests**
 
@@ -1037,11 +1102,19 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Delete: `session/layout/CockpitLayoutValidator.java` (115)
 - Delete: `session/layout/CockpitLayoutDocument.java` (32)
 - Delete: `session/layout/CockpitLayoutCodec.java` (29)
-- Delete: `session/layout/CockpitModuleStateContract.java` (8)
 - Delete: `src/test/.../session/layout/CockpitLayoutResolverTest.java` (72), `CockpitLayoutValidatorTest.java` (76), `CockpitLayoutCodecTest.java` (27), `CockpitBuiltInPresetCatalogTest.java` (95)
 - Modify: `session/layout/CockpitBuiltInPresetCatalog.java` (80)
 - Modify: `session/layout/CockpitModuleRegistry.java` (89), `CockpitModuleDefinition.java` (27)
 - Modify: `src/test/.../session/layout/CockpitModuleRegistryTest.java` (75)
+- **Keep:** `session/layout/CockpitModuleStateContract.java` (8) — see below
+
+> **Deviation from spec §6.2 — `CockpitModuleStateContract` is retained.** The spec lists
+> it for deletion, but it is not layout machinery: it carries each module's loading, empty
+> and error messages, read at `cockpit-layout.js:1606-1614` and reached through
+> `CockpitModuleDefinition.states()`. Those are module *content*, which spec §6.4 leaves
+> untouched, and deleting the record would silently drop the messages — degrading a
+> surviving capability, which spec §10 forbids. Eight lines stay. Everything else in §6.2
+> is deleted as listed.
 
 **Interfaces:**
 - Consumes: `SessionController` calling `CockpitBuiltInPresetCatalog.all()` (Task 10).
@@ -1081,9 +1154,20 @@ Preserve all four presets and their exact assignments. These are the current def
 
 Verify this table against the file before relying on it; if the source has changed since, the source wins.
 
-- [ ] **Step 3: Collapse allowedZones to a single zone**
+- [ ] **Step 3: Collapse allowedZones to a single zone, and change nothing else**
 
-In `CockpitModuleDefinition`, replace `Set<CockpitZone> allowedZones()` with `CockpitZone zone()`. In `CockpitModuleRegistry`, update each definition to name its single home zone, taken from the Exploration preset's assignment in Step 1.
+In `CockpitModuleDefinition`, replace `Set<CockpitZone> allowedZones()` with `CockpitZone zone()`, and update the compact constructor (`:17`, `:21`) accordingly — `allowedZones = Set.copyOf(...)` goes, and the `allowedZones.isEmpty()` guard becomes a `zone == null` guard. In `CockpitModuleRegistry`, update each definition to name its single home zone, taken from the Exploration preset's assignment in Step 1.
+
+**Every other component of the record stays.** Spec §6.3's phrasing — "reduced to which modules exist, which zone each belongs to" — must not be applied literally:
+
+| Component | Consumer that keeps it alive |
+|---|---|
+| `minWidthPx`, `minHeightPx` | `_cockpit-module-shell.html:8-9` |
+| `focusSupported` | `CockpitRuntimeModuleController:148`, `_cockpit-module-shell.html:21` |
+| `compactSupported` | `CockpitRuntimeModuleController:152` |
+| `states` | `cockpit-layout.js:1606-1614` |
+
+`CockpitRuntimeModuleController` is untouched by spec §6.4, so anything it reads is retained by definition. Only `allowedZones` is layout-configurability.
 
 - [ ] **Step 4: Delete the document, resolver, validator, and codec**
 
@@ -1092,12 +1176,13 @@ git rm src/main/java/dev/hendrikhoemberg/dmhelper/session/layout/CockpitLayoutRe
        src/main/java/dev/hendrikhoemberg/dmhelper/session/layout/CockpitLayoutValidator.java \
        src/main/java/dev/hendrikhoemberg/dmhelper/session/layout/CockpitLayoutDocument.java \
        src/main/java/dev/hendrikhoemberg/dmhelper/session/layout/CockpitLayoutCodec.java \
-       src/main/java/dev/hendrikhoemberg/dmhelper/session/layout/CockpitModuleStateContract.java \
        src/test/java/dev/hendrikhoemberg/dmhelper/session/layout/CockpitLayoutResolverTest.java \
        src/test/java/dev/hendrikhoemberg/dmhelper/session/layout/CockpitLayoutValidatorTest.java \
        src/test/java/dev/hendrikhoemberg/dmhelper/session/layout/CockpitLayoutCodecTest.java \
        src/test/java/dev/hendrikhoemberg/dmhelper/session/layout/CockpitBuiltInPresetCatalogTest.java
 ```
+
+`CockpitModuleStateContract` is **not** in this list — see the deviation note above.
 
 `CockpitBuiltInPresetCatalogTest` is deleted because its single test asserts that built-ins pass `CockpitLayoutValidator`, which no longer exists. Task 12 Step 2 replaces this coverage with a preset-shape test.
 
@@ -1108,6 +1193,8 @@ git rm src/main/java/dev/hendrikhoemberg/dmhelper/session/layout/CockpitLayoutRe
 ```
 
 Every error names a referent of a deleted class. Fix each. `CockpitRuntimeModuleViewService` and `CockpitRuntimeModuleController` must **not** need changes — if they do, they were coupled to layout configurability and the coupling should be removed rather than preserved.
+
+`CockpitLayoutPresetService:176` referenced `compactModuleKeys`, but that class is already gone (Task 10), so the only remaining referents are the four `SplitRatios` arguments and the trailing `Set` in the catalog, both removed by Step 2.
 
 - [ ] **Step 6: Update CockpitModuleRegistryTest**
 
@@ -1140,13 +1227,22 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 **This is a real TDD task** — the deliverable is new code, and its behaviour is asserted by a browser test.
 
+**Read the stage preamble first.** This is a *trim* of the existing `CockpitLayoutController` class, not a from-scratch rewrite: the placement engine, tab handling, focus layer and module-state messages are all retained, and the edit/drag/splitter/preset-CRUD machinery is deleted around them. Working from the existing file is what keeps the retained behaviours intact.
+
 **Files:**
-- Rewrite: `src/main/resources/static/js/cockpit-layout.js` (2,246 → ~200)
+- Rewrite: `src/main/resources/static/js/cockpit-layout.js` (2,246 → ~600, see preamble)
+- Modify: `src/main/resources/templates/session/_cockpit-workbench.html` — add `data-cockpit-preset`, add a per-zone collapse button
 - Create: `src/test/java/dev/hendrikhoemberg/dmhelper/session/CockpitPresetSwitchingBrowserTest.java`
 
 **Interfaces:**
-- Consumes: `cockpitPresets` and `cockpitDefaultPresetKey` model attributes (Task 10); `BuiltInPreset.key()`/`name()` (Task 11).
-- Produces: a cockpit root carrying `data-cockpit-preset="<key>"`; zones carrying `data-zone-collapsed="true"` when collapsed; `localStorage` keys `dmhelper.cockpit.preset` and `dmhelper.cockpit.collapsed`.
+- Consumes: `window.cockpitLayoutConfig.presets` and `.defaultPresetKey` (`cockpit.html:194-201`, unchanged); `BuiltInPreset.key()`/`name()`/`moduleKeysByZone()` (Task 11).
+- Produces: `[data-cockpit-workbench]` carrying `data-cockpit-preset="<key>"`; zones carrying `data-collapsed="true"` when collapsed; `localStorage` keys `dmhelper.cockpit.preset` and `dmhelper.cockpit.collapsed`.
+
+### Two markup decisions, made here so Task 13 inherits them
+
+**Use the existing hooks. Do not invent `data-cockpit-root`.** `[data-cockpit-workbench]` already exists on the `<section>` at `_cockpit-workbench.html:10` — and critically, it is the **direct parent of the four zone elements**. Task 13 puts `display: grid` and `grid-template-areas` on it and `grid-area` on the zones; that only works if the zones are its direct grid children. An attribute added to a wrapper in `cockpit.html` would put a `<section>` between the grid container and its zones and the layout would not apply. So `data-cockpit-preset` goes on `[data-cockpit-workbench]`.
+
+**Collapse uses the existing `data-collapsed` attribute**, already present on every zone (`:20,49,78,107`) and asserted by the retained `CockpitWorkbenchTemplateContractTest:122`. Do not add a parallel `data-zone-collapsed` — that is addition, not subtraction.
 
 - [ ] **Step 1: Write the failing browser test**
 
@@ -1198,58 +1294,110 @@ class CockpitPresetSwitchingBrowserTest {
         if (page != null) page.close();
     }
 
+    /** SessionController maps the cockpit at /campaigns/{campaignId}/session. */
     private String cockpitPath() {
-        return "/campaigns/" + seeded.campaignId() + "/session/cockpit";
+        return "/campaigns/" + seeded.campaignId() + "/session";
+    }
+
+    private void reopen() {
+        PageReady.open(page, "http://localhost:" + port, cockpitPath());
+    }
+
+    private String activePreset() {
+        return page.locator("[data-cockpit-workbench]").getAttribute("data-cockpit-preset");
+    }
+
+    private String zoneOf(String moduleKey) {
+        return page.locator("[data-cockpit-zone]:has(.cockpit-module[data-module-key='"
+                + moduleKey + "'])").getAttribute("data-cockpit-zone");
     }
 
     @Test
     void opensOnExplorationByDefault() {
-        assertThat(page.locator("[data-cockpit-root]").getAttribute("data-cockpit-preset"))
-                .isEqualTo("builtin:exploration");
+        assertThat(activePreset()).isEqualTo("builtin:exploration");
     }
 
     @Test
-    void switchingPresetChangesTheRootAttribute() {
+    void switchingPresetChangesTheWorkbenchAttribute() {
         page.selectOption("#cockpitPresetPicker", "builtin:combat");
 
-        assertThat(page.locator("[data-cockpit-root]").getAttribute("data-cockpit-preset"))
-                .isEqualTo("builtin:combat");
+        assertThat(activePreset()).isEqualTo("builtin:combat");
     }
 
     @Test
     void presetChoiceSurvivesReload() {
         page.selectOption("#cockpitPresetPicker", "builtin:combat");
-        page.reload();
-        PageReady.settle(page);
+        reopen();
 
-        assertThat(page.locator("[data-cockpit-root]").getAttribute("data-cockpit-preset"))
-                .isEqualTo("builtin:combat");
+        assertThat(activePreset()).isEqualTo("builtin:combat");
     }
 
     @Test
     void digitShortcutSelectsItsPreset() {
         page.keyboard().press("Digit2");
 
-        assertThat(page.locator("[data-cockpit-root]").getAttribute("data-cockpit-preset"))
-                .isEqualTo("builtin:combat");
+        assertThat(activePreset()).isEqualTo("builtin:combat");
     }
 
     @Test
     void collapsingAZoneMarksItAndSurvivesReload() {
         page.click("[data-cockpit-zone='RIGHT_SUPPORT'] [data-zone-collapse]");
         assertThat(page.locator("[data-cockpit-zone='RIGHT_SUPPORT']")
-                .getAttribute("data-zone-collapsed")).isEqualTo("true");
+                .getAttribute("data-collapsed")).isEqualTo("true");
 
-        page.reload();
-        PageReady.settle(page);
+        reopen();
 
         assertThat(page.locator("[data-cockpit-zone='RIGHT_SUPPORT']")
-                .getAttribute("data-zone-collapsed")).isEqualTo("true");
+                .getAttribute("data-collapsed")).isEqualTo("true");
+    }
+
+    // --- The placement engine: this is the coverage the stage preamble exists for. ---
+
+    @Test
+    void explorationPlacesModulesInTheirAssignedZones() {
+        assertThat(zoneOf("story")).isEqualTo("PRIMARY");
+        assertThat(zoneOf("session-plan")).isEqualTo("LEFT_SUPPORT");
+        assertThat(zoneOf("party")).isEqualTo("RIGHT_SUPPORT");
+        assertThat(zoneOf("quick-notes")).isEqualTo("BOTTOM_UTILITY");
+    }
+
+    @Test
+    void switchingToCombatRelocatesModulesOutOfTheDepot() {
+        page.selectOption("#cockpitPresetPicker", "builtin:combat");
+
+        assertThat(zoneOf("map")).isEqualTo("PRIMARY");
+        assertThat(zoneOf("story")).isEqualTo("LEFT_SUPPORT");
+        assertThat(zoneOf("party")).isEqualTo("LEFT_SUPPORT");
+        assertThat(zoneOf("encounter")).isEqualTo("RIGHT_SUPPORT");
+        assertThat(zoneOf("session-log")).isEqualTo("BOTTOM_UTILITY");
+    }
+
+    @Test
+    void everyPresetPlacesEveryModuleItAssigns() {
+        for (String preset : List.of("builtin:exploration", "builtin:combat",
+                "builtin:theatre-of-mind", "builtin:session-review")) {
+            page.selectOption("#cockpitPresetPicker", preset);
+
+            assertThat(page.locator("[data-cockpit-zone] .cockpit-module[data-module-key]").count())
+                    .as("%s renders no modules", preset)
+                    .isGreaterThan(0);
+        }
+    }
+
+    @Test
+    void clickingAZoneTabSelectsThatModulesPanel() {
+        page.click("[data-module-tab='reference']");
+
+        assertThat(page.locator("[data-module-panel='reference']").isVisible()).isTrue();
     }
 }
 ```
 
-Before running, verify two things against the codebase and adjust: the cockpit route (`SessionController`'s `@GetMapping`), and whether `PageReady` exposes a `settle` method — if it does not, use whatever the class provides for post-navigation readiness. Do not invent a helper.
+`switchingToCombatRelocatesModulesOutOfTheDepot` is the test that would have caught the gap the stage preamble describes: `map`, `encounter` and `session-log` start life in `[data-cockpit-depot]`, and only the placement engine gets them into a zone. **Do not weaken it.** If it cannot pass, the placement engine was deleted and the implementation is wrong.
+
+Transcribe the expected assignments from Task 11 Step 2's table, and let the source win if it has changed.
+
+The route above is verified (`SessionController` maps `/campaigns/{campaignId}/session`). `PageReady` exposes `open` and `settlesAfterLoad` — there is **no** `settle` method, which is why `reopen()` re-navigates through `PageReady.open` rather than calling `page.reload()`. Re-navigation exercises `localStorage` persistence identically.
 
 - [ ] **Step 2: Add a preset-shape unit test**
 
@@ -1284,130 +1432,49 @@ This replaces the coverage deleted with `CockpitBuiltInPresetCatalogTest` in Tas
 
 Expected: FAIL. The browser tests fail because `data-cockpit-preset` does not exist yet; the catalog test fails to compile until `moduleKeysByZone()` exists from Task 11.
 
-- [ ] **Step 4: Write the replacement cockpit-layout.js**
+- [ ] **Step 4: Trim cockpit-layout.js down to the retained behaviours**
 
-Replace the entire file with a switcher. The whole implementation:
+Work **inside the existing file**, deleting the "what it loses" list from the stage preamble and keeping the "what it keeps" list. Do not start from a blank file — the placement engine and tab handling are subtle and there is no reason to re-derive them.
 
-```js
-/**
- * Cockpit layout: four fixed presets, selected by picker or digit shortcut, plus per-zone
- * collapse. Layouts are CSS classes; the only state is which preset is active and which
- * zones are collapsed, both remembered in localStorage.
- *
- * Replaced the drag-and-drop layout engine on 2026-08-04. See
- * docs/superpowers/specs/2026-08-04-overengineering-remediation-design.md section 6.
- */
-(function () {
-  'use strict';
+Delete, in roughly this order:
 
-  const PRESET_KEY = 'dmhelper.cockpit.preset';
-  const COLLAPSED_KEY = 'dmhelper.cockpit.collapsed';
+1. `bindEditInteractions` (:272-423) and every drag/drop handler it registers.
+2. `bindSplitters` (:423-433) and the whole resize block: `splitterBounds`, `workbenchMetrics`, `clampRatios`, `resize`, `onSplitterKey`, `resizeToBound`, `onSplitterPointerDown`, `syncSplitterAria`.
+3. Mutation and CRUD: `moveModule`, `reorderModule`, `removeModule`, `addModule`, `openArrangeMenu`, `closeArrangeMenu`, `openAddModuleDialog`, `closeAddModuleDialog`, `assertEditing`, `prepareLayoutMutation`, `syncEditChrome`, `lockMode`, `maybeOfferDraftRecovery`.
+4. Layout-document machinery: `allowedZonesFor`, `ensureZoneLayout`, `repairActive`, the schema-version and dirty-state fields, `INVALID_STORAGE_MSG`.
+5. Persistence: `API_BASE` and every `fetch` against it. Preset choice now goes to `localStorage` only.
+6. Compact-mode plumbing: the `compact` set in `renderLayout` (:593) and the `compactModuleKeys` reads at :1039-1040 and :1733. `def.compactSupported` stays — `CockpitRuntimeModuleController` still serves that mode.
 
-  const BY_DIGIT = {
-    Digit1: 'builtin:exploration',
-    Digit2: 'builtin:combat',
-    Digit3: 'builtin:theatre-of-mind',
-    Digit4: 'builtin:session-review',
-  };
+Then make these four changes to what remains:
 
-  const root = document.querySelector('[data-cockpit-root]');
-  if (!root) return;
+- **`renderLayout()`** — drop the ratio block (:596-603, the `--left-size`/`--primary-size`/`--right-size`/`--top-size`/`--bottom-size` custom properties). Task 13's CSS owns sizing now. Read the zone assignment from `preset.moduleKeysByZone[zone]` instead of `layout.zones[zone].moduleKeys`. Everything else in the method — the depot round-trip, panel construction, tab strip — is unchanged.
+- **`applyPreset(key)`** — set `data-cockpit-preset` on `this.workbench`, write the key to `localStorage`, call `renderLayout()`. Drop the dirty-check and draft options.
+- **Collapse** — generalise `toggleBottomUtility()` (:947) to any zone: toggle `data-collapsed` on the zone element, mirror it to the toggle button's `aria-expanded`, and persist the collapsed set under `dmhelper.cockpit.collapsed`. Apply it on mount.
+- **`constructor`** — drop the `builtIn` filter at :23-27; every preset is built-in now (Task 10).
 
-  const picker = document.getElementById('cockpitPresetPicker');
-  const known = new Set(
-    Array.from(picker ? picker.options : []).map((option) => option.value)
-  );
+Keep the two `localStorage` keys namespaced as `dmhelper.cockpit.preset` and `dmhelper.cockpit.collapsed`, and keep the existing `storageKey(kind)` helper (:73) if it already namespaces per campaign — preset choice is per-browser, and matching the existing convention is cheaper than changing it.
 
-  function readPreset() {
-    const stored = localStorage.getItem(PRESET_KEY);
-    if (stored && known.has(stored)) return stored;
-    return picker?.dataset.defaultPreset || 'builtin:exploration';
-  }
+- [ ] **Step 5: Add the two markup hooks**
 
-  function applyPreset(key, remember) {
-    if (!known.has(key)) return;
-    root.setAttribute('data-cockpit-preset', key);
-    if (picker) picker.value = key;
-    if (remember) localStorage.setItem(PRESET_KEY, key);
-  }
+Only two hooks are missing; the rest already exist.
 
-  function readCollapsed() {
-    try {
-      const parsed = JSON.parse(localStorage.getItem(COLLAPSED_KEY) || '[]');
-      return Array.isArray(parsed) ? new Set(parsed) : new Set();
-    } catch {
-      return new Set();
-    }
-  }
-
-  const collapsed = readCollapsed();
-
-  function applyCollapse() {
-    document.querySelectorAll('[data-cockpit-zone]').forEach((zone) => {
-      const name = zone.getAttribute('data-cockpit-zone');
-      const isCollapsed = collapsed.has(name);
-      zone.setAttribute('data-zone-collapsed', String(isCollapsed));
-      const toggle = zone.querySelector('[data-zone-collapse]');
-      if (toggle) toggle.setAttribute('aria-expanded', String(!isCollapsed));
-    });
-    localStorage.setItem(COLLAPSED_KEY, JSON.stringify(Array.from(collapsed)));
-  }
-
-  function toggleZone(name) {
-    if (collapsed.has(name)) collapsed.delete(name);
-    else collapsed.add(name);
-    applyCollapse();
-  }
-
-  if (picker) {
-    picker.disabled = false;
-    picker.removeAttribute('aria-disabled');
-    picker.addEventListener('change', (event) => applyPreset(event.target.value, true));
-  }
-
-  document.addEventListener('click', (event) => {
-    const toggle = event.target.closest('[data-zone-collapse]');
-    if (!toggle) return;
-    const zone = toggle.closest('[data-cockpit-zone]');
-    if (zone) toggleZone(zone.getAttribute('data-cockpit-zone'));
-  });
-
-  document.addEventListener('keydown', (event) => {
-    // A digit typed into a field is text, not a shortcut.
-    const tag = document.activeElement?.tagName;
-    if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
-    if (event.metaKey || event.ctrlKey || event.altKey) return;
-    const key = BY_DIGIT[event.code];
-    if (!key) return;
-    event.preventDefault();
-    applyPreset(key, true);
-  });
-
-  applyPreset(readPreset(), false);
-  applyCollapse();
-})();
-```
-
-- [ ] **Step 5: Add the required markup hooks**
-
-The script needs three hooks that may not exist yet:
-- `[data-cockpit-root]` on the cockpit root element in `cockpit.html`
-- `[data-cockpit-zone="<ZONE>"]` on each zone — **already present** at `_cockpit-workbench.html:18,47`
-- `[data-zone-collapse]` on a collapse button inside each zone
-
-Add the root attribute and a collapse button per zone. The button markup, placed inside each zone's existing `cockpit-zone__tabs` container:
+- `[data-cockpit-workbench]` — **already present** (`_cockpit-workbench.html:10`). Add `data-cockpit-preset="builtin:exploration"` to it so a no-JS load still declares the layout it rendered.
+- `[data-cockpit-zone="<ZONE>"]` — **already present** (`:18,47,76,105`).
+- `data-collapsed` on each zone — **already present** (`:20,49,78,107`).
+- `[data-zone-collapse]` — **missing.** Add one button per zone, inside each zone's existing `cockpit-zone__tabs` container:
 
 ```html
       <button type="button" class="btn btn-ghost cockpit-zone__collapse"
-              data-zone-collapse aria-expanded="true"
-              th:attr="aria-controls='cockpitZonePanels-' + ${zoneName}">
+              data-zone-collapse aria-expanded="true">
         <span class="sr-only">Collapse zone</span>
       </button>
 ```
 
-Enable the picker in the template by removing `disabled aria-disabled="true"` from `#cockpitPresetPicker` (`cockpit.html:51`) — the script re-enables it, but a no-JS load should not present a dead control as active either. Leave it disabled in markup and let the script enable it, which is what the script above does.
+BOTTOM_UTILITY already has `#cockpitBottomUtility` as its `aria-controls` target from the old toggle; the new per-zone buttons control their own zone's `[data-zone-panels]`, so give each panel container an id if you wire `aria-controls`, or omit the attribute rather than pointing it at something that does not exist.
 
-- [ ] **Step 6: Run the tests**
+**The picker stays `disabled aria-disabled="true"` in the template** (`cockpit.html:51`) and is enabled by the script on mount. That is deliberate: a no-JS load must not present a control that cannot work, and the retained `CockpitWorkbenchTemplateContractTest:132-136` asserts exactly this markup state. Do not remove those attributes from the template.
+
+- [ ] **Step 6: Run the new tests**
 
 ```bash
 ./mvnw test -P gates -Dtest='CockpitPresetSwitchingBrowserTest,CockpitBuiltInPresetCatalogTest'
@@ -1415,15 +1482,37 @@ Enable the picker in the template by removing `disabled aria-disabled="true"` fr
 
 Expected: PASS. Iterate on the script and markup until green. If a test needs the assertion weakened to pass, the implementation is wrong — fix the implementation.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 7: Run the browser tests that depend on the retained behaviours**
+
+These are retained by spec §7.1 and exercise the tab handling and module content the trim must not have broken. They are the regression check on Step 4:
+
+```bash
+./mvnw test -P gates -Dtest='CockpitReferenceBrowserTest,CockpitModuleInitialLoadBrowserTest,CockpitMapTransitionBrowserTest,CockpitRuntimeMapPickerBrowserTest,CoreSessionLoopSmokeTest,KeyboardOperationGateTest'
+```
+
+Expected: PASS. `CockpitReferenceBrowserTest` clicks `[data-module-tab='reference']` at `:82,105,146` and `CockpitModuleInitialLoadBrowserTest:140` clicks `[data-module-tab='party']` — a failure here means tab selection went out with the edit machinery. `KeyboardOperationGateTest` covers the roving-tabindex navigation.
+
+- [ ] **Step 8: Confirm the file landed in the expected size range**
+
+```bash
+wc -l src/main/resources/static/js/cockpit-layout.js
+```
+
+Expected: roughly 600, and in any case under 700. Materially above that means something on the stage preamble's "loses" list survived.
+
+- [ ] **Step 9: Commit**
 
 ```bash
 git add -A
 git commit -m "feat!: replace the cockpit layout engine with fixed presets
 
-cockpit-layout.js goes from 2246 lines to ~200: apply a preset class,
-toggle zone collapse, remember both in localStorage. Drag-and-drop
-docking, custom presets, split ratios and schema repair are gone.
+cockpit-layout.js goes from 2246 to ~600 lines. Drag-and-drop docking,
+custom presets, split ratios, layout schema versioning and repair, and
+the layout API are gone. Module placement, zone tabs, the focus layer
+and module state messages are retained: they are module navigation and
+content, not layout configurability.
+
+Preset choice and per-zone collapse are remembered in localStorage.
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 ```
@@ -1439,8 +1528,8 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Modify: `src/main/java/dev/hendrikhoemberg/dmhelper/session/web/SessionController.java:82`
 
 **Interfaces:**
-- Consumes: `data-cockpit-preset` on the root and `data-zone-collapsed` on zones (Task 12).
-- Produces: four grid definitions keyed off `[data-cockpit-preset]`, and a collapse rule.
+- Consumes: `data-cockpit-preset` on `[data-cockpit-workbench]` and `data-collapsed` on zones (Task 12).
+- Produces: four grid definitions keyed off `[data-cockpit-preset]` on the workbench, and a collapse rule.
 
 - [ ] **Step 1: Remove the preset-management overflow menu**
 
@@ -1469,7 +1558,35 @@ grep -rn "layoutEditing\|data-layout-edit-only" src/main/resources/templates/
 
 - [ ] **Step 4: Remove the splitter markup**
 
-Split ratios are gone, so the splitter elements are inert. Remove every `[data-cockpit-splitter]` element from `_cockpit-workbench.html` (one is at line 41).
+Split ratios are gone, so the splitter elements are inert. Remove all three `[data-cockpit-splitter]` elements from `_cockpit-workbench.html` (`:40-43`, `:69-72`, `:98-101`).
+
+Also remove the two now-meaningless state attributes on the workbench `<section>`: `data-layout-mode="locked"` (`:12`) and `data-bottom-collapsed="false"` (`:13`). There is no unlocked mode any more, and bottom collapse is now per-zone `data-collapsed` like every other zone.
+
+While in this file, delete the edit-mode chrome that no longer has code behind it: `#cockpitModuleArrangeMenu` (`:180-188`), `#cockpitAddModuleDialog` (`:190-197`), `#cockpitLayoutExitDialog` (`:199-207`), and `#cockpitPresetNameDialog` (`:209-218`). Keep `#cockpitLayoutNotice` (`:220`) only if the trimmed script still writes to it; delete it otherwise.
+
+**Keep** `#cockpitFocusLayer` (`:172-177`) and `[data-cockpit-depot]` (`:159-169`) — the focus layer is retained behaviour, and the depot is where the placement engine parks modules the active preset does not use.
+
+- [ ] **Step 4b: Update CockpitWorkbenchTemplateContractTest to the new contract**
+
+`CockpitWorkbenchTemplateContractTest` is retained, and Steps 1-4 deliberately remove markup it currently asserts. It will fail, and that failure is correct — the contract changed. Update these assertions:
+
+| Line | Current assertion | Change to |
+|---|---|---|
+| `:91` | `[role=separator][aria-orientation]` has size 3 | assert size **0** — splitters are gone |
+| `:97-98` | `#cockpitLayoutModeButton` exists, text "Edit layout" | delete — button removed in Step 2 |
+| `:99-100` | every `[data-layout-edit-only]` is hidden | delete — attribute removed in Step 3 |
+| `:122` | BOTTOM_UTILITY `data-collapsed` | keep — still the collapse attribute |
+| `:124` | workbench `data-bottom-collapsed` | delete — attribute removed in Step 4 |
+| `:137-144` | `#cockpitLayoutModeButton` / `#cockpitAddModuleButton` are disabled | delete both — buttons removed in Step 2 |
+
+**Do not touch** `:88-90` (the four zones), `:92-96` (every registry module has exactly one shell), `:107-121` (the Exploration server-render placement and the depot contents), or `:132-136` (the picker is `disabled aria-disabled="true"` in markup). Those are the contract that still holds, and `:107-121` in particular is what guarantees a no-JS load still renders a usable cockpit.
+
+Add one assertion for the new hook:
+
+```java
+        assertThat(document.select("[data-cockpit-workbench]").attr("data-cockpit-preset"))
+                .isEqualTo("builtin:exploration");
+```
 
 - [ ] **Step 5: Rewrite the layout CSS**
 
@@ -1477,10 +1594,10 @@ Replace `cockpit-layout.css` with four grid definitions plus a collapse rule. Th
 
 ```css
 /* Four fixed cockpit layouts. The active one is selected by [data-cockpit-preset] on the
-   cockpit root; zones are placed by grid-area. Replaced the resizable/dockable engine on
+   workbench; zones are placed by grid-area. Replaced the resizable/dockable engine on
    2026-08-04. */
 
-[data-cockpit-root] {
+[data-cockpit-workbench] {
   display: grid;
   gap: var(--space-sm);
   height: 100%;
@@ -1520,9 +1637,12 @@ Replace `cockpit-layout.css` with four grid definitions plus a collapse rule. Th
 [data-cockpit-zone="RIGHT_SUPPORT"] { grid-area: right; }
 [data-cockpit-zone="BOTTOM_UTILITY"]{ grid-area: bottom; }
 
-[data-cockpit-zone][data-zone-collapsed="true"] > [data-zone-panels] { display: none; }
-[data-cockpit-zone][data-zone-collapsed="true"] { flex: 0 0 auto; }
+[data-cockpit-zone][data-collapsed="true"] > [data-zone-panels] { display: none; }
 ```
+
+**Both the grid container and the preset selector must be `[data-cockpit-workbench]`** — the same element. `grid-area` only positions *direct children* of the grid container, and the four zones are direct children of the workbench `<section>` (`_cockpit-workbench.html:10`), not of any wrapper in `cockpit.html`. Putting `display: grid` on a wrapper instead would silently produce a page with no layout at all.
+
+Session Review's BOTTOM_UTILITY is empty (`collapsedZone()` in the catalog). It collapses to nothing under `grid-template-rows: 1fr auto` without a special case; confirm visually in Step 9 rather than adding a rule for it.
 
 The column ratios above are the current `SplitRatios` from `CockpitBuiltInPresetCatalog.java:9-30`, converted to `fr` units: exploration `0.18/0.64/0.18`, combat `0.18/0.52/0.30`, theatre-of-mind `0.19/0.50/0.31`, session-review `0.22/0.56/0.22`. The fourth ratio in each original tuple (`0.16`) is the bottom zone's share and is expressed by `grid-template-rows` rather than a column.
 
@@ -1534,7 +1654,7 @@ Retain from the old file only the rules that style zone chrome (tabs, panels, he
 ./mvnw test -P gates -Dtest='CockpitPresetSwitchingBrowserTest,CockpitWorkbenchTemplateContractTest,CockpitHydrationTest,CockpitPresentationContractTest,CockpitSurfaceContractTest'
 ```
 
-Expected: PASS. These contract tests assert template structure and will name any hook removed by mistake.
+Expected: PASS — but only after Step 4b. These tests assert template structure, so they name both hooks removed by mistake *and* hooks removed on purpose; Step 4b is what tells the two apart. A failure naming anything in Step 4b's "do not touch" column is a real defect.
 
 - [ ] **Step 7: Run the suite**
 
@@ -1602,7 +1722,23 @@ grep -hno '"/[a-zA-Z/{}$+.]*"' \
   src/test/java/dev/hendrikhoemberg/dmhelper/gate/MapEditorRenderGateTest.java | sort -u
 ```
 
-Every distinct surface path in that output must appear in Step 2's surface list. This is the step that stops the consolidation from silently dropping coverage.
+Every distinct surface path in that output must appear in Step 2's surface list. This is the step that stops the consolidation from silently dropping coverage — **Step 2's list is the output of this command, not a list written from memory.**
+
+At the time of writing, that command yields these distinct surfaces. Treat it as the expected result, not as a substitute for running it:
+
+```
+/campaigns                    /library                 /adventures
+/campaigns/{id}               /library/about           /adventures/{aid}/scenes/{sid}
+/party                        /library/hazards         /encounters
+/quests                       /library/tables          /maps
+/notes                        /library/traps           /maps/{mapId}/edit
+/handouts                     /world/factions          /calendar
+/ledger                       /world/locations         /audio/cues
+/treasury                     /world/npcs              /setup
+/sheets
+```
+
+The previous draft of this task listed 17 surfaces that were written by hand rather than derived. It **dropped** `/treasury`, `/sheets`, `/setup`, all three `/world/*` surfaces, and all four non-obvious `/library/*` surfaces, and it added `/library/rules` and `/library/spells`, which no deleted gate covered. Reconciling against Step 1 is not a formality.
 
 - [ ] **Step 2: Write the consolidated gate**
 
@@ -1619,21 +1755,31 @@ Replace the file's test methods with two parameterized tests over surfaces × vi
         return Stream.of(
                 new Surface("campaign list", "/campaigns"),
                 new Surface("campaign dashboard", c),
-                new Surface("cockpit", c + "/session/cockpit"),
+                new Surface("campaign setup", c + "/setup"),
+                new Surface("cockpit", c + "/session"),
                 new Surface("party", c + "/party"),
+                new Surface("sheets", c + "/sheets"),
                 new Surface("adventures", c + "/adventures"),
+                new Surface("scene", c + "/adventures/" + seeded.adventureId()
+                        + "/scenes/" + seeded.hostileSceneId()),
                 new Surface("quests", c + "/quests"),
                 new Surface("encounters", c + "/encounters"),
                 new Surface("maps", c + "/maps"),
-                new Surface("map editor", c + "/maps/" + seeded.mapId() + "/edit"),
+                new Surface("map editor", c + "/maps/" + seeded.playableMapId() + "/edit"),
                 new Surface("notes", c + "/notes"),
                 new Surface("handouts", c + "/handouts"),
                 new Surface("ledger", c + "/ledger"),
+                new Surface("treasury", c + "/treasury"),
                 new Surface("calendar", c + "/calendar"),
                 new Surface("audio cues", c + "/audio/cues"),
+                new Surface("world locations", c + "/world/locations"),
+                new Surface("world factions", c + "/world/factions"),
+                new Surface("world npcs", c + "/world/npcs"),
                 new Surface("library", "/library"),
-                new Surface("library rules", "/library/rules"),
-                new Surface("library spells", "/library/spells"));
+                new Surface("library about", "/library/about"),
+                new Surface("library tables", "/library/tables"),
+                new Surface("library hazards", "/library/hazards"),
+                new Surface("library traps", "/library/traps"));
     }
 
     @ParameterizedTest(name = "{0} has no horizontal overflow")
@@ -1690,7 +1836,7 @@ Replace the file's test methods with two parameterized tests over surfaces × vi
 
 `INSTANCE` is the `PER_CLASS` test instance captured in `@BeforeAll`. If wiring a static `@MethodSource` to instance state proves awkward, make `surfaces()` static and pass `seeded` ids through a static field set in `@BeforeAll` — the mechanism does not matter, the coverage does.
 
-Verify `seeded.mapId()` exists on `ReleaseRehearsalFixture.Seeded` before using it; if the accessor is named differently, use the real name.
+Accessor names above are taken from `ReleaseRehearsalFixture.Seeded` (`:52-57`): the map id is **`playableMapId()`**, not `mapId()`; the scene surface uses `adventureId()` and `hostileSceneId()`. The cockpit route is `/campaigns/{campaignId}/session` — `SessionController` has no `/session/cockpit` mapping.
 
 - [ ] **Step 3: Run the gate and confirm it passes on current code**
 
@@ -1698,7 +1844,12 @@ Verify `seeded.mapId()` exists on `ReleaseRehearsalFixture.Seeded` before using 
 ./mvnw test -P gates -Dtest='ViewportAccessibilityGateTest'
 ```
 
-Expected: PASS. A failure is a **real defect** in a surface — fix the CSS, not the assertion.
+Expected: PASS. A failure is one of two things, and they need opposite responses:
+
+- **A 404 or a blank render** means the path is wrong — the surface exists under a different route. Fix the path.
+- **An overflow or clipping failure** is a **real defect** in that surface. Fix the CSS, not the assertion.
+
+Do not resolve a 404 by deleting the surface from the list; that is how the coverage Step 1 protects gets dropped.
 
 - [ ] **Step 4: Prove the gate has teeth**
 
@@ -1738,7 +1889,9 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 
 **Interfaces:**
 - Consumes: Task 14's consolidated gate carrying the retained coverage.
-- Produces: a browser tier of 16 classes.
+- Produces: a browser tier of **17** classes.
+
+The spec's §7 arithmetic is 30 − 14 = 16, and that is right for the classes it names. Task 12 then adds `CockpitPresetSwitchingBrowserTest`, so the tier lands at 17. Spec §10's "30 classes to 16" should read 17 when the spec is updated; no class the spec retains has been dropped.
 
 - [ ] **Step 1: Confirm the consolidated gate is green first**
 
@@ -1800,13 +1953,14 @@ Record both wall-clock times and both test counts from the surefire summary. The
 
 - [ ] **Step 6: Update the test tiers document**
 
-In `docs/test-tiers.md`, update the table at the top with the measured figures from Step 5, and correct the "21 Playwright classes" claim in the "Why" section — the tier now has 16 classes. Add a line recording what changed:
+In `docs/test-tiers.md`, update the table at the top with the measured figures from Step 5, and correct the "21 Playwright classes" claim at `:19` — that figure was already stale before this work (the tier held 30), and the tier now holds 17. Add a line recording what changed:
 
 ```markdown
 **Updated 2026-08-04.** The appearance gates were consolidated into a single
 overflow gate (`gate/ViewportAccessibilityGateTest`); 14 style and render gates
-were deleted. Visual design requirements remain in force as design intent — they
-are no longer machine-enforced.
+were deleted and `CockpitPresetSwitchingBrowserTest` was added, taking the browser
+tier from 30 classes to 17. Visual design requirements remain in force as design
+intent — they are no longer machine-enforced.
 ```
 
 - [ ] **Step 7: Run the full suite**
@@ -1825,7 +1979,7 @@ git commit -m "test: delete the appearance gates
 
 Removes 14 style and render gate classes (~2,186 lines) whose coverage is
 either absorbed by the consolidated overflow gate or asserted properties
-of the deleted layout engine. Browser tier: 30 classes to 16.
+of the deleted layout engine. Browser tier: 30 classes to 17.
 
 Visual design requirements remain in force as intent; enforcement is no
 longer automated.
@@ -1980,7 +2134,7 @@ Replace the cockpit-layout material with the fixed-preset behaviour: four layout
 
 - [ ] **Step 3: Correct the capability matrix**
 
-`docs/campaign-capabilities.md` is referenced by `SPEC.md` as the authority on implemented capabilities, and `GET /api/v1/capabilities` is documented alongside it. Remove entries for v1 import/export and custom layout presets.
+`docs/campaign-capabilities.md` is referenced by `SPEC.md` as the authority on implemented capabilities, and `GET /api/v1/capabilities` is documented alongside it. Remove entries for v1 import/export, custom layout presets, and — if it is listed — the served v1 map-document schema removed in Task 8.
 
 Then check whether the endpoint itself reports them:
 
@@ -1992,7 +2146,7 @@ If `CapabilityManifest` advertises a removed capability, remove it there too —
 
 - [ ] **Step 4: Archive superseded process artifacts**
 
-`docs/superpowers/` holds 74,011 lines across 45 plans, 15 specs, and 5 verification records. These are the record of why the code looks as it does and are **archived, not deleted**.
+`docs/superpowers/` holds ~74,000 lines across 46 plans, 16 specs, and 5 verification records — the spec §8.3 figures of 45 and 15 predate this remediation's own two documents. These are the record of why the code looks as it does and are **archived, not deleted**.
 
 ```bash
 mkdir -p docs/superpowers/archive
@@ -2078,11 +2232,21 @@ After Task 17, verify the outcome against spec §10:
 
 ```bash
 find src/main/java -name "*.java" | xargs wc -l | tail -1        # expect ~52,100
-find src/main/resources/static -type f | xargs wc -l | tail -1   # expect ~19,400
+find src/main/resources/static -type f | xargs wc -l | tail -1   # expect ~19,800
 find src/test/java -name "*.java" | xargs wc -l | tail -1        # expect ~64,400
-grep -rl '@Tag("browser")' src/test/java | wc -l                 # expect 16
+grep -rl '@Tag("browser")' src/test/java | wc -l                 # expect 17
+wc -l src/main/resources/static/js/cockpit-layout.js              # expect ~600
 ```
+
+Two targets differ from spec §10, both traced to the corrected Stage 3 projection in the Stage 3 preamble:
+
+- **Static ~19,800, not ~19,400.** `cockpit-layout.js` lands at ~600 rather than ~200 because the module-placement engine and zone tabs are retained behaviour. Stage 3's static saving is ~2,100 rather than 2,498.
+- **Browser tier 17, not 16.** Task 12 adds `CockpitPresetSwitchingBrowserTest`.
+
+Both are projections that spec §10 marks with `~`, and neither repeals a requirement or changes what the application does. Update spec §6.3, §7, and §10 to match once this lands.
 
 Figures within a few hundred lines of target are fine. A large divergence means a task deleted more or less than planned — investigate before merging.
 
-Four capabilities have been deliberately withdrawn: v1 campaign import, v1 campaign export, custom cockpit layout presets, and automated enforcement of visual style requirements. No surviving capability is degraded.
+**Capabilities deliberately withdrawn — five, not four.** The spec names v1 campaign import, v1 campaign export, custom cockpit layout presets, and automated enforcement of visual style requirements. Task 8 adds a fifth: the served v1 map-document schema at `GET /api/v1/schemas/map-document.schema.json`, withdrawn because it describes a format the application can no longer read. The v2 equivalent at `/api/v1/schemas/map-document-v2.schema.json` is unaffected.
+
+No surviving capability is degraded. In particular, verify by hand before merging that the cockpit still does all of: place every module in its assigned zone across all four presets, switch zone tabs by click and by arrow key, open and leave module focus mode, and show module loading/empty/error messages. Those four are the behaviours most at risk from Stage 3, and only the first is covered by a new test.
