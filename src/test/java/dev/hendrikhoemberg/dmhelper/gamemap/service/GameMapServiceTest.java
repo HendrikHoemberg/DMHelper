@@ -2,7 +2,7 @@ package dev.hendrikhoemberg.dmhelper.gamemap.service;
 
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneRefCleaner;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
-import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignSchemaValidator;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignManifestV2SchemaValidator;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Combatant;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
@@ -14,8 +14,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.OptimisticLockingFailureException;
 import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.List;
 import java.util.UUID;
@@ -236,24 +239,21 @@ class GameMapServiceTest {
     @Test
     void dtoSerializationMatchesMapDocumentSchema() throws Exception {
         var mapper = JsonMapper.builder().build();
-        CampaignSchemaValidator val = new CampaignSchemaValidator();
+        CampaignManifestV2SchemaValidator val = new CampaignManifestV2SchemaValidator();
 
         MapDocumentDto defaultDoc = MapDocumentDto.createDefault(30, 20, 48);
-        String defaultJson = mapper.writeValueAsString(defaultDoc);
-        String defaultCampaign = """
-                {"formatVersion":1,"campaign":{"name":"DTO test"},"maps":[{"key":"map-1","name":"Map","movementMode":"GRID","showGrid":true,"grid":{"w":30,"h":20,"cellPx":48,"gridType":"SQUARE"},"document":%s,"tokens":[]}]}""".formatted(defaultJson);
-        assertThat(val.validate(defaultCampaign)).isEmpty();
+        assertThat(val.validate(manifestWrapping(mapper, defaultDoc))).isEmpty();
 
         MapDocumentDto richDoc = new MapDocumentDto(
-                1,
+                2,
                 new MapDocumentDto.GridDto(10, 10, 48, "square", "GRID", true),
                 List.of(
                         MapLayerDto.createTerrainLayer(),
                         MapLayerDto.createObjectsLayer(),
                         MapLayerDto.createAnnotationsLayer(),
-                        new MapLayerDto("bg", "Background", MapLayerDto.LayerType.IMAGE, true, false, List.of(),
+                        new MapLayerDto("bg", "Background", MapLayerDto.LayerType.OBJECTS, true, false, List.of(),
                                 List.of(new MapLayerDto.ShapeDto("rect", List.of(0.0, 0.0, 5.0, 5.0), "#ff0000", "#000", 1.0, "box")),
-                                new MapLayerDto.ImageDto("data:image/png;base64,AAAA", 0, 0, 10, 10), null)
+                                null, null)
                 ),
                 List.of(
                         new MapDocumentDto.PrimitiveDto("ROOM", 2, 2, 10, 8, null)
@@ -262,10 +262,36 @@ class GameMapServiceTest {
                         new MapDocumentDto.TerrainDefDto("moss", "Moss", "#2a6e3a", true)
                 )
         );
-        String richJson = mapper.writeValueAsString(richDoc);
-        String richCampaign = """
-                {"formatVersion":1,"campaign":{"name":"DTO test"},"maps":[{"key":"map-1","name":"Map","movementMode":"GRID","showGrid":true,"grid":{"w":10,"h":10,"cellPx":48,"gridType":"SQUARE"},"document":%s,"tokens":[]}]}""".formatted(richJson);
-        assertThat(val.validate(richCampaign)).isEmpty();
+        assertThat(val.validate(manifestWrapping(mapper, richDoc))).isEmpty();
+    }
+
+    /**
+     * Injects a serialized MapDocumentDto into the committed minimal v2 manifest. The
+     * schema requires 25 top-level fields and forbids extras, so the envelope comes from
+     * the fixture rather than being written out here.
+     */
+    private static String manifestWrapping(JsonMapper mapper, MapDocumentDto document)
+            throws Exception {
+        ObjectNode manifest = (ObjectNode) mapper.readTree(
+                new ClassPathResource("campaigns/v2/minimal.dmcampaign.json").getInputStream());
+
+        ObjectNode map = mapper.createObjectNode();
+        map.put("key", "map-1");
+        map.put("name", "DTO test map");
+        map.put("movementMode", "GRID");
+        map.put("showGrid", true);
+        map.put("sortOrder", 0);
+        ObjectNode grid = mapper.createObjectNode();
+        grid.put("w", document.grid().width());
+        grid.put("h", document.grid().height());
+        grid.put("cellPx", document.grid().cellSizePx());
+        grid.put("gridType", "SQUARE");
+        map.set("grid", grid);
+        map.set("document", mapper.valueToTree(document));
+        map.set("tokens", mapper.createArrayNode());
+
+        ((ArrayNode) manifest.get("maps")).add(map);
+        return mapper.writeValueAsString(manifest);
     }
 
     @Test
