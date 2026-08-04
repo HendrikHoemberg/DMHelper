@@ -61,7 +61,8 @@ class CampaignAdminSurfaceTest {
         assertThat(settings).contains("Delete Campaign");
         assertThat(settings).contains("id=\"editDescription\"");
         assertThat(settings).as("the import dialog must travel with its button")
-                .contains("campaignImport");
+                .contains("x-data=\"campaignImport\"")
+                .contains("id=\"importDialog\"");
     }
 
     @Test

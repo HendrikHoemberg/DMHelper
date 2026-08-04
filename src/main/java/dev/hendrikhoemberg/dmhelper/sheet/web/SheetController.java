@@ -155,8 +155,8 @@ public class SheetController {
                     classLevel > 1 ? generateHitDieRolls(classSourceKey, classLevel, hitDieChoice) : List.of(),
                     subclassSourceKey);
             Map<String, Object> proficiencies = new HashMap<>();
-            proficiencies.put("skills", skills.isEmpty() ? List.of() : Arrays.asList(skills.split(",\\s*")));
-            proficiencies.put("expertise", expertise.isEmpty() ? List.of() : Arrays.asList(expertise.split(",\\s*")));
+            proficiencies.put("skills", parseSkillKeys(skills));
+            proficiencies.put("expertise", parseSkillKeys(expertise));
             proficiencies.put("tools", tools.isEmpty() ? List.of() : Arrays.asList(tools.split(",\\s*")));
             proficiencies.put("languages", languages.isEmpty() ? List.of() : Arrays.asList(languages.split(",\\s*")));
 
@@ -186,6 +186,22 @@ public class SheetController {
             redirectAttributes.addFlashAttribute("error", "Failed to delete sheet: " + e.getMessage());
         }
         return "redirect:/campaigns/" + campaignId + "/party";
+    }
+
+    /**
+     * The wizard asks for skill *names* in free text, but the sheet, the checkboxes and the
+     * derivation engine all key on lowercase snake_case. Without this, a DM who types the
+     * skill the way the rules spell it ("Animal Handling") stores a proficiency nothing can
+     * ever match, and the sheet silently shows no bonus.
+     */
+    private List<String> parseSkillKeys(String raw) {
+        if (raw == null || raw.isBlank()) return List.of();
+        return Arrays.stream(raw.split(","))
+                .map(String::strip)
+                .filter(s -> !s.isEmpty())
+                .map(s -> s.toLowerCase(Locale.ROOT).replaceAll("[\\s-]+", "_"))
+                .distinct()
+                .toList();
     }
 
     private List<Integer> generateHitDieRolls(String classSourceKey, int level, String hitDieChoice) {

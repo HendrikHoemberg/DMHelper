@@ -112,6 +112,16 @@ class CampaignControllerTest {
     }
 
     @Test
+    void listCarriesTheImportDialogItsButtonsInvoke() throws Exception {
+        when(service.findAll()).thenReturn(List.of(sampleCampaign()));
+
+        mockMvc.perform(get("/campaigns"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("x-data=\"campaignImport\"")))
+                .andExpect(content().string(containsString("id=\"importDialog\"")));
+    }
+
+    @Test
     void shouldCreateCampaign() throws Exception {
         Campaign c = sampleCampaign();
         when(service.create(eq("Test Campaign"), any())).thenReturn(c);

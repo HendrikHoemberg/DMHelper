@@ -120,7 +120,10 @@
             </span>
         </div>
     </section>
+    <!-- The hidden import overlay must live inside the content slot the shell renders:
+         a th:block outside the page() fragment arguments is discarded when the whole
+         <html> element is replaced. -->
+    <th:block th:replace="~{campaigns/_import-dialog :: import-dialog}"></th:block>
 </div>
-<th:block th:replace="~{campaigns/_import-dialog :: import-dialog}"></th:block>
 </body>
 </html>

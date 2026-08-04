@@ -272,8 +272,11 @@ class CockpitRuntimeModuleViewServiceTest {
         var view = service.party(seeded.campaignId());
         entityManager.clear();
         assertThat(view.members()).isNotEmpty();
-        assertThat(view.members().get(0).name()).isEqualTo("Test Hero");
-        assertThat(view.members().get(0).ac()).isEqualTo(16);
+        assertThat(view.members()).extracting(CockpitRuntimeModuleViewService.PartyMemberView::name)
+                .contains("Test Hero", "Ayla Flammenzunge");
+        assertThat(view.members().stream()
+                .filter(m -> m.name().equals("Test Hero"))
+                .findFirst().orElseThrow().ac()).isEqualTo(16);
         assertThat(allRecordComponentTypes(view.getClass()))
                 .noneMatch(type -> type.isAnnotationPresent(Entity.class));
     }

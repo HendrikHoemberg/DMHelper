@@ -1,20 +1,9 @@
 <div th:fragment="liveState(campaignId, member)" class="sheet-live-state">
+    <!-- The endpoint takes a JSON @RequestBody. htmx only ever form-encodes hx-vals, so this
+         used to PUT form data under a JSON content type and get a silent 415 back. -->
     <form class="live-state-form" data-change-state="pending"
-          th:hx-put="@{/api/v1/campaigns/{cid}/party/{mid}/live-state(cid=${campaignId}, mid=${member.id})}"
-          hx-headers='{"Content-Type": "application/json"}'
-          hx-vals='js:{
-              tempHp: parseInt(document.getElementById("ls-tempHp").value) || 0,
-              inspiration: document.getElementById("ls-inspiration").checked,
-              exhaustion: parseInt(document.getElementById("ls-exhaustion").value) || 0,
-               deathSaveSuccesses: document.querySelectorAll(".ls-dss:checked").length,
-               deathSaveFailures: document.querySelectorAll(".ls-dsf:checked").length,
-              concentratingOn: document.getElementById("ls-conc").value || null,
-               conditionsJson: JSON.stringify(Array.from(document.querySelectorAll(".ls-condition:checked")).map(cb => cb.value)),
-              currentHp: parseInt(document.getElementById("ls-currentHp").value) || 0
-          }'
-          hx-swap="none"
-          hx-disabled-elt="find button[type='submit']"
-          hx-on::after-request="if(event.detail.successful) location.reload()">
+          th:data-save-url="@{/api/v1/campaigns/{cid}/party/{mid}/live-state(cid=${campaignId}, mid=${member.id})}"
+          onsubmit="saveLiveState(event, this)">
         <dl class="pm-stats">
             <div>
                 <dt>Current HP</dt>
@@ -88,4 +77,34 @@
             <button type="submit" class="btn btn-primary btn-xs">Save Live State</button>
         </div>
     </form>
+    <script>
+    async function saveLiveState(event, form) {
+        event.preventDefault();
+        const button = form.querySelector('button[type="submit"]');
+        const send = () => window.dmRequest(form.dataset.saveUrl, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                currentHp: parseInt(document.getElementById('ls-currentHp').value) || 0,
+                tempHp: parseInt(document.getElementById('ls-tempHp').value) || 0,
+                inspiration: document.getElementById('ls-inspiration').checked,
+                exhaustion: parseInt(document.getElementById('ls-exhaustion').value) || 0,
+                deathSaveSuccesses: document.querySelectorAll('.ls-dss:checked').length,
+                deathSaveFailures: document.querySelectorAll('.ls-dsf:checked').length,
+                concentratingOn: document.getElementById('ls-conc').value || null,
+                conditionsJson: JSON.stringify(
+                    Array.from(document.querySelectorAll('.ls-condition:checked')).map(cb => cb.value))
+            })
+        });
+        button.disabled = true;
+        try {
+            await send();
+            location.reload();
+        } catch (error) {
+            window.reportActionFailure('Live state not saved.', error, send);
+        } finally {
+            button.disabled = false;
+        }
+    }
+    </script>
 </div>

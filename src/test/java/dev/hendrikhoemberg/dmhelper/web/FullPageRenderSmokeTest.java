@@ -61,6 +61,7 @@ class FullPageRenderSmokeTest {
                 c + "/notes",
                 c + "/party",
                 c + "/sheets",
+                c + "/party/" + seeded.memberId() + "/sheet",
                 c + "/treasury",
                 c + "/ledger",
                 c + "/world/npcs",

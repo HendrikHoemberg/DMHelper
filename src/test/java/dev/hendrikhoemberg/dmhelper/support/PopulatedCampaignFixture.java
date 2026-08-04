@@ -32,6 +32,8 @@ import dev.hendrikhoemberg.dmhelper.world.data.*;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
 import dev.hendrikhoemberg.dmhelper.notes.data.NoteType;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
+import dev.hendrikhoemberg.dmhelper.party.data.PartyMemberRepository;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.RollableTableLinkRole;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLink;
 import dev.hendrikhoemberg.dmhelper.rollabletable.data.WorldLocationTableLinkRepository;
@@ -64,7 +66,8 @@ public class PopulatedCampaignFixture {
             UUID hazardId,
             UUID tableId,
             UUID dmOnlyHandoutId,
-            UUID playerHandoutId) {}
+            UUID playerHandoutId,
+            UUID memberId) {}
 
     public static final int CHAPTER_TWO_SCENE_COUNT = 12;
 
@@ -120,6 +123,7 @@ public class PopulatedCampaignFixture {
     private final StatBlockRepository statBlocks;
     private final NoteService notes;
     private final WorldLocationTableLinkRepository locationTableLinks;
+    private final PartyMemberRepository partyMembers;
 
     public PopulatedCampaignFixture(CampaignRepository campaigns,
                                     AdventureService adventures,
@@ -132,7 +136,8 @@ public class PopulatedCampaignFixture {
                                      HandoutRepository handouts,
                                      StatBlockRepository statBlocks,
                                      NoteService notes,
-                                     WorldLocationTableLinkRepository locationTableLinks) {
+                                     WorldLocationTableLinkRepository locationTableLinks,
+                                     PartyMemberRepository partyMembers) {
         this.campaigns = campaigns;
         this.adventures = adventures;
         this.structured = structured;
@@ -145,6 +150,7 @@ public class PopulatedCampaignFixture {
         this.statBlocks = statBlocks;
         this.notes = notes;
         this.locationTableLinks = locationTableLinks;
+        this.partyMembers = partyMembers;
     }
 
     @Transactional
@@ -329,10 +335,24 @@ public class PopulatedCampaignFixture {
         playerHandout.setPresented(true);
         handouts.save(playerHandout);
 
+        PartyMember member = new PartyMember();
+        member.setCampaign(campaignRef);
+        member.setCharacterName("Ayla Flammenzunge");
+        member.setPlayerName("Fixture");
+        member.setClassAndLevel("Wizard 5");
+        member.setAc(12);
+        member.setMaxHp(30);
+        member.setCurrentHp(30);
+        member.setSpeed(30);
+        member.setPassivePerception(11);
+        member.setPassiveInsight(11);
+        member.setPassiveInvestigation(13);
+        UUID memberId = partyMembers.save(member).getId();
+
         return new Seeded(campaignId, adventureId, one.getId(), two.getId(),
                 rich.getId(), second.getId(), faction.getId(), parent.getId(), child.getId(),
                 npc.getId(), quest.getId(), trap.getId(), hazard.getId(), table.getId(),
-                dmHandout.getId(), playerHandout.getId());
+                dmHandout.getId(), playerHandout.getId(), memberId);
     }
 
     private Handout handout(Campaign campaign, String title, String tags, boolean dmOnly) {

@@ -4,6 +4,71 @@
         title='Level Up',
         body=~{::#levelUpBody},
         actions=~{::#levelUpActions})}"></th:block>
+    <script th:inline="javascript">
+    const sheetTotalLevel = /*[[${sheet != null ? sheet.derivedValues().totalLevel() : 1}]]*/ 1;
+
+    function updateLevelUpForm() {
+        const select = document.getElementById('lu-class-select');
+        if (!select) return;
+        const classSourceKey = select.value;
+        if (!classSourceKey) return;
+
+        fetch('sheet/creation-options?classSourceKey=' + encodeURIComponent(classSourceKey))
+            .then(r => r.json())
+            .then(data => {
+                const subclassSection = document.getElementById('lu-subclass-section');
+                const subclassSelect = document.getElementById('lu-subclass-select');
+                subclassSelect.innerHTML = '<option value="">— None —</option>';
+                if (data.subclasses && data.subclasses.length > 0) {
+                    data.subclasses.forEach(function(sc) {
+                        const opt = document.createElement('option');
+                        opt.value = sc.sourceKey;
+                        opt.textContent = sc.name;
+                        subclassSelect.appendChild(opt);
+                    });
+                    subclassSection.style.display = 'block';
+                } else {
+                    subclassSection.style.display = 'none';
+                }
+            })
+            .catch(() => {});
+
+        const newLevel = sheetTotalLevel + 1;
+        const asiLevels = [4, 8, 12, 16, 19];
+        const fighterExtraAsi = [6, 14];
+        const isAsi = asiLevels.includes(newLevel) ||
+            (classSourceKey && classSourceKey.includes('fighter') && fighterExtraAsi.includes(newLevel));
+        document.getElementById('lu-asi-section').style.display = isAsi ? 'block' : 'none';
+    }
+
+    function updateAsiFields() {
+        const asiType = document.querySelector('input[name="asiType"]:checked');
+        if (!asiType) return;
+        const val = asiType.value;
+        const abilities = document.getElementById('lu-asi-abilities');
+        const secondAbility = document.getElementById('asi-ability-2');
+        if (val === 'single' || val === 'double') {
+            abilities.style.display = 'flex';
+            secondAbility.style.display = val === 'double' ? 'inline-block' : 'none';
+        } else {
+            abilities.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        updateLevelUpForm();
+    });
+    </script>
+    <style>
+    #lu-asi-section label { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; font-size: var(--text-sm); }
+    </style>
+</th:block>
+
+<!-- The dialog's body and actions are only ever *pulled* into the overlay above.
+     ::# selection copies instead of moving, so inside the same fragment root they
+     would render once where the overlay pulls them in and again as the fragment's
+     own content. This fragment is included nowhere on purpose. -->
+<th:block th:fragment="level-up-dialog-body-actions">
     <div id="levelUpBody" data-change-state="pending">
         <div th:if="${sheet != null}" class="u-text-sm u-mb-sm">
             Current level: <strong th:text="${sheet.derivedValues().totalLevel()}">1</strong>
@@ -83,62 +148,4 @@
         <button type="submit" form="level-up-form" class="btn btn-primary">Confirm Level Up</button>
         <button type="button" class="btn btn-ghost" data-overlay-dismiss>Cancel</button>
     </div>
-    <script th:inline="javascript">
-    const sheetTotalLevel = /*[[${sheet != null ? sheet.derivedValues().totalLevel() : 1}]]*/ 1;
-
-    function updateLevelUpForm() {
-        const select = document.getElementById('lu-class-select');
-        if (!select) return;
-        const classSourceKey = select.value;
-        if (!classSourceKey) return;
-
-        fetch('sheet/creation-options?classSourceKey=' + encodeURIComponent(classSourceKey))
-            .then(r => r.json())
-            .then(data => {
-                const subclassSection = document.getElementById('lu-subclass-section');
-                const subclassSelect = document.getElementById('lu-subclass-select');
-                subclassSelect.innerHTML = '<option value="">— None —</option>';
-                if (data.subclasses && data.subclasses.length > 0) {
-                    data.subclasses.forEach(function(sc) {
-                        const opt = document.createElement('option');
-                        opt.value = sc.sourceKey;
-                        opt.textContent = sc.name;
-                        subclassSelect.appendChild(opt);
-                    });
-                    subclassSection.style.display = 'block';
-                } else {
-                    subclassSection.style.display = 'none';
-                }
-            })
-            .catch(() => {});
-
-        const newLevel = sheetTotalLevel + 1;
-        const asiLevels = [4, 8, 12, 16, 19];
-        const fighterExtraAsi = [6, 14];
-        const isAsi = asiLevels.includes(newLevel) ||
-            (classSourceKey && classSourceKey.includes('fighter') && fighterExtraAsi.includes(newLevel));
-        document.getElementById('lu-asi-section').style.display = isAsi ? 'block' : 'none';
-    }
-
-    function updateAsiFields() {
-        const asiType = document.querySelector('input[name="asiType"]:checked');
-        if (!asiType) return;
-        const val = asiType.value;
-        const abilities = document.getElementById('lu-asi-abilities');
-        const secondAbility = document.getElementById('asi-ability-2');
-        if (val === 'single' || val === 'double') {
-            abilities.style.display = 'flex';
-            secondAbility.style.display = val === 'double' ? 'inline-block' : 'none';
-        } else {
-            abilities.style.display = 'none';
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        updateLevelUpForm();
-    });
-    </script>
-    <style>
-    #lu-asi-section label { display: inline-flex; align-items: center; gap: 4px; margin-right: 8px; font-size: var(--text-sm); }
-    </style>
 </th:block>

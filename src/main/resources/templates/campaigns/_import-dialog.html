@@ -6,7 +6,13 @@
         title='Import Campaign Package',
         body=~{::#importBody},
         actions=~{::#importActions})}"></th:block>
+</div>
 
+<!-- The dialog's body and actions are only ever *pulled* into the overlay above.
+     ::# selection copies instead of moving, so inside the same fragment root they
+     would render once where the overlay pulls them in and again as the fragment's
+     own content. This fragment is included nowhere on purpose. -->
+<th:block th:fragment="import-dialog-body-actions">
     <div id="importBody">
         <template x-if="!preview">
             <div>
@@ -121,5 +127,5 @@
                     x-text="confirming ? 'Importing...' : 'Import Campaign'"></button>
         </template>
     </div>
-</div>
+</th:block>
 </html>

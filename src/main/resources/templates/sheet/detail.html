@@ -202,10 +202,8 @@
                     <div class="form-actions" style="margin-top: var(--space-sm)">
                         <button type="button" class="btn btn-ghost btn-xs" onclick="addOverrideRow()">+ Add Override</button>
                         <button type="button" class="btn"
-                                th:hx-put="@{/campaigns/{cid}/party/{pid}/sheet/overrides(cid=${campaign.id}, pid=${member.id})}"
-                                hx-headers='{"Content-Type": "application/json"}'
-                                hx-vals='js:buildOverrides()'
-                                hx-disabled-elt="this">Save Overrides</button>
+                                th:data-save-url="@{/campaigns/{cid}/party/{pid}/sheet/overrides(cid=${campaign.id}, pid=${member.id})}"
+                                onclick="saveSheetSection(this, 'PUT', buildOverrides, 'Overrides not saved.')">Save Overrides</button>
                     </div>
                 </div>
             </div>
@@ -268,10 +266,8 @@
                     </div>
                     <div class="form-actions" style="margin-top: var(--space-sm)">
                         <button type="button" class="btn btn-primary"
-                                th:hx-post="@{/campaigns/{cid}/party/{pid}/sheet/proficiencies(cid=${campaign.id}, pid=${member.id})}"
-                                hx-headers='{"Content-Type": "application/json"}'
-                                hx-vals='js:buildProficiencies()'
-                                hx-disabled-elt="this">Save Proficiencies</button>
+                                th:data-save-url="@{/campaigns/{cid}/party/{pid}/sheet/proficiencies(cid=${campaign.id}, pid=${member.id})}"
+                                onclick="saveSheetSection(this, 'POST', buildProficiencies, 'Proficiencies not saved.')">Save Proficiencies</button>
                     </div>
                 </div>
             </div>
@@ -346,6 +342,27 @@ function buildProficiencies() {
         armor: Array.from(document.querySelectorAll('input[name="armor"]:checked')).map(cb => cb.value),
         weapons: Array.from(document.querySelectorAll('input[name="weapons"]:checked')).map(cb => cb.value)
     };
+}
+
+/* These sections post JSON bodies, which htmx cannot do — hx-vals is always form-encoded,
+   so the endpoints' @RequestBody rejected it with a 415 that no one saw. dmRequest sends a
+   real JSON body and routes failures to the toast that already exists for them. */
+async function saveSheetSection(button, method, buildBody, failureSummary) {
+    const url = button.dataset.saveUrl;
+    const send = () => window.dmRequest(url, {
+        method: method,
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(buildBody())
+    });
+    button.disabled = true;
+    try {
+        await send();
+        location.reload();
+    } catch (error) {
+        window.reportActionFailure(failureSummary, error, send);
+    } finally {
+        button.disabled = false;
+    }
 }
 </script>
 </div>
