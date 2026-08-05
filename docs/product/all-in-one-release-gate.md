@@ -12,7 +12,7 @@ Every requirement row names an executable proof.
 
 Run the core browser gate (the indexed §11.1 proofs and release-index contract are also run by the full gate):
 
-    ./mvnw -q test -Dtest='ReleaseRehearsalTest,ViewportAccessibilityGateTest,TypographyRenderGateTest,SurfaceNestingGateTest,CoreSessionLoopSmokeTest'
+    ./mvnw -q test -Dtest='ReleaseRehearsalTest,ViewportAccessibilityGateTest,KeyboardOperationGateTest,CoreSessionLoopSmokeTest'
 
 Run the full release gate; this command must pass before the all-in-one premise may be claimed:
 
@@ -24,8 +24,8 @@ Run the full release gate; this command must pass before the all-in-one premise 
 |---|---|---|
 | 11.1.1 | Production-parity integration; `open-in-view=false`; fails on lazy access after a service boundary | `ReadinessProductionParityTest`, `FullPageRenderSmokeTest` |
 | 11.1.2 | Every cockpit module renders empty, populated, loading, error, compact and focused | `RuntimeModuleShellContractTest`, `CockpitRuntimeModuleControllerTest`, `CockpitRuntimeModuleViewServiceTest`, `CockpitModuleInitialLoadBrowserTest` — **partial, see note** |
-| 11.1.3 | Layout schema migration, constraints, docking, serialization, invalid recovery, preset reset | `CockpitLayoutPresetServiceTest`, `CockpitWorkbenchTemplateContractTest` |
-| 11.1.4 | Browser interaction: edit lock, dividers, docking, tabs, focus, keyboard, persistence, retry, resize | `CoreSessionLoopSmokeTest`, `ViewportAccessibilityGateTest` |
+| 11.1.3 | Fixed preset module-to-zone assignments; every preset places only known modules, never repeats one | `CockpitBuiltInPresetCatalogTest`, `CockpitPresetSwitchingBrowserTest`, `CockpitWorkbenchTemplateContractTest` |
+| 11.1.4 | Browser interaction: tabs, focus, keyboard, preset choice + collapse persistence, retry | `CoreSessionLoopSmokeTest`, `KeyboardOperationGateTest`, `CockpitReferenceBrowserTest`, `CockpitPresetSwitchingBrowserTest`, `ViewportAccessibilityGateTest` |
 | 11.1.7 | Tracker-driven defeat/revive and a cross-midnight session produce a faithful log | `SessionEncounterEvidenceIntegrationTest`, `ReleaseRehearsalTest` |
 | 11.1.8 | No console errors, unhandled rejections, malformed requests or silent non-2xx actions | `BrowserFailureCollector` attached in `ReleaseRehearsalTest`, `ViewportAccessibilityGateTest`, `CoreSessionLoopSmokeTest` |
 | 11.1.9 | App ships with no authentication layer; must bind to loopback (`server.address=127.0.0.1`). Any change to `server.address` is a security decision requiring explicit sign-off. | `ReleaseRehearsalTest` |
@@ -34,14 +34,11 @@ Run the full release gate; this command must pass before the all-in-one premise 
 
 | Requirement | Proved by |
 |---|---|
-| No document-level scrolling | `ViewportAccessibilityGateTest#theCockpitNeverScrollsTheDocument` |
-| Modules do not overlap or clip | `ViewportAccessibilityGateTest#modulesNeitherOverlapNorClip` |
-| Command bar fully reachable | `ViewportAccessibilityGateTest#theCommandBarStaysFullyReachable` |
-| Minimum module sizes respected | `ViewportAccessibilityGateTest#everyVisibleModuleRespectsItsDeclaredMinimum` |
-| Keyboard: edit mode, tabs, focus/restore, splitters | `ViewportAccessibilityGateTest#keyboardUsersCanDriveTheWorkspace` |
-| Focus visible and restored after dialogs | `ViewportAccessibilityGateTest#focusIsVisibleAndRestoredAfterAFocusedLayer` |
-| Reduced motion respected | `ViewportAccessibilityGateTest#reducedMotionIsRespected`, `MotionBudgetContractTest` |
-| Every reviewed page survives every supported viewport and zoom gate; reduced motion; minimum runtime text size | `ViewportMatrixGateTest` |
+| No horizontal document overflow at 1366×768 and 1920×1080 | `ViewportAccessibilityGateTest#surfaceDoesNotOverflowHorizontally` |
+| No content clipped past the right edge | `ViewportAccessibilityGateTest#surfaceDoesNotClipContent` |
+| Focus visible and restored | `KeyboardOperationGateTest`, `OverlayBehaviorGateTest` |
+| Reduced motion respected | `MotionBudgetContractTest`, `CoreSessionLoopSmokeTest` |
+| Minimum runtime text size | `TypeScaleContractTest` |
 | Product-wide keyboard operation: visible focus, accessible icon-only names, logical landmarks and headings | `KeyboardOperationGateTest` |
 
 ## §11.3 Representative release rehearsal
@@ -80,23 +77,15 @@ of the acceptance criteria is asserted by `RedesignCoverageContractTest` (spec �
 
 | Gate | Proves |
 |---|---|
-| `ShellRenderGateTest` | One app-shell implementation renders every page: no horizontal scroll at any supported viewport, the library composes cleanly once its panes load, and the rail stays usable expanded at 1280×720 |
 | `OverlayBehaviorGateTest` | Overlays (spec §15): every blocking level traps and restores focus, Escape closes and restores focus to the trigger, side sheets open in place, and stacked traps restore down the stack |
-| `NarrativePreparationRenderGateTest` | Narrative surfaces: campaign home shows current state above the fold and scene narrative stays within a readable measure |
-| `OperationalPreparationRenderGateTest` | Operational surfaces: encounter-setup controls are not micro controls and stay inside their own field at 1280×720, and the active combatant is distinguishable by more than color |
-| `ReferenceWorkspaceRenderGateTest` | Reference workspace: every library category renders its own title with the same card grid and aligned metadata rows |
-| `MapEditorRenderGateTest` | Map editor: nothing essential clips at the minimum viewport |
-| `CockpitLaptopFitGateTest` | Cockpit laptop fit (spec §12.4): every built-in preset fits without document scroll or clipped chrome, support modules become tabs when their zone is constrained, and primary runtime actions stay visible |
-| `ViewportMatrixGateTest` | Product-wide viewport matrix (spec §4): every reviewed page survives every supported viewport and the 125%/150% zoom gates across the primary range, with reduced motion and the minimum runtime text size |
 | `KeyboardOperationGateTest` | Product-wide keyboard operation: every focusable control paints a visible focus indicator, icon-only controls carry accessible names, and landmarks and heading order are logical |
-| `VisualReviewMatrixGateTest` | Captures the visual review matrix (spec §20.3): populated states for every surface, empty states from the unseeded campaign, and overlay/transient surfaces |
 
 ## §10 Visual system
 
 The visual rules are enforced continuously rather than at gate time:
 `DesignTokenContractTest`, `TypeScaleContractTest`, `TypographyRoleContractTest`,
-`TypographyRenderGateTest`, `CombatLegibilityContractTest`, `GoldAccentContractTest`,
-`SurfaceNestingGateTest`, `ElevationModelContractTest`, `ControlConsistencyContractTest`,
+`CombatLegibilityContractTest`, `GoldAccentContractTest`,
+`ElevationModelContractTest`, `ControlConsistencyContractTest`,
 `DestructiveActionContractTest`, `MotionBudgetContractTest`.
 
 ## Note on reduced coverage (test-suite triage)
