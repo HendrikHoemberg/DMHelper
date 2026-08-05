@@ -236,8 +236,9 @@ Add `V30__drop_cockpit_layout_presets.sql`, dropping the table created by
 **Any custom presets currently stored are destroyed by this migration.** This is accepted:
 the application has one user, who has approved the removal. No export path is provided.
 
-**Net ~3,233 lines of main and static** (3,683 removed against ~450 rewritten), plus ~400
-lines of layout tests — ~3,700 in total.
+**Net ~3,285 lines of main, static and test.** The corrected projection (see §10) is
+−785 main, ~−2,100 static (the layout script retains the module-placement engine and zone
+tabs, landing at ~600 lines rather than ~200), and −400 of layout tests.
 
 ## 7. Stage 4 — Consolidate the appearance gates
 
