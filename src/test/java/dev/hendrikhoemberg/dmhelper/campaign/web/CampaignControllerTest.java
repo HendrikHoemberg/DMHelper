@@ -5,16 +5,11 @@ import dev.hendrikhoemberg.dmhelper.audio.data.AudioCueRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignScaleService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
-import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
-import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignValidationResult;
-import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 import dev.hendrikhoemberg.dmhelper.notes.service.NoteService;
 import dev.hendrikhoemberg.dmhelper.party.service.PartyMemberService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.http.MediaType;
-import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -241,83 +236,5 @@ class CampaignControllerTest {
                         .header("HX-Request", "true"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("HX-Redirect", "/campaigns"));
-    }
-
-    @Test
-    void shouldExportCampaign() throws Exception {
-        Campaign c = sampleCampaign();
-        when(service.findById(c.getId())).thenReturn(c);
-        when(service.exportToJson(c.getId())).thenReturn("{\"formatVersion\":1}");
-
-        mockMvc.perform(get("/campaigns/{id}/export", c.getId()))
-                .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(header().string("Content-Disposition", containsString(".dmcampaign.json")));
-    }
-
-    @Test
-    void shouldImportCampaign() throws Exception {
-        String json = """
-                {
-                  "formatVersion": 1,
-                  "campaign": { "name": "Imported", "description": "desc" },
-                  "party": [], "statBlocks": [], "handouts": [],
-                  "maps": [], "encounters": [], "notes": []
-                }
-                """;
-        Campaign c = sampleCampaign();
-        c.setName("Imported");
-        when(service.importFromJson(json)).thenReturn(c);
-
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "test.dmcampaign.json", "application/json", json.getBytes());
-
-        mockMvc.perform(multipart("/campaigns/import")
-                        .file(file))
-                .andExpect(status().isOk())
-                .andExpect(model().attributeExists("sigil"))
-                .andExpect(content().string(containsString("campaign-sigil")))
-                .andExpect(content().string(containsString("Imported")));
-    }
-
-    @Test
-    void dryRunReturnsBlockedForInvalidJson() throws Exception {
-        String json = "invalid";
-        CampaignValidationResult result = new CampaignValidationResult(
-                Optional.empty(),
-                List.of(new CampaignImportProblem(ImportSeverity.ERROR, "INVALID_JSON", "/",
-                        "Campaign file is not valid JSON.", "Fix the JSON syntax.")));
-        when(service.validateImport(json)).thenReturn(result);
-
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "test.dmcampaign.json", "application/json", json.getBytes());
-
-        mockMvc.perform(multipart("/campaigns/import")
-                        .file(file)
-                        .param("dryRun", "true"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.valid").value(false))
-                .andExpect(jsonPath("$.status").value("BLOCKED"))
-                .andExpect(jsonPath("$.problems").isNotEmpty());
-    }
-
-    @Test
-    void dryRunReturnsReadyForValidJson() throws Exception {
-        String json = "{\"valid\":true}";
-        CampaignValidationResult result = new CampaignValidationResult(
-                Optional.empty(),
-                List.of());
-        when(service.validateImport(json)).thenReturn(result);
-
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "test.dmcampaign.json", "application/json", json.getBytes());
-
-        mockMvc.perform(multipart("/campaigns/import")
-                        .file(file)
-                        .param("dryRun", "true"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.valid").value(true))
-                .andExpect(jsonPath("$.status").value("READY"))
-                .andExpect(jsonPath("$.problems").isEmpty());
     }
 }

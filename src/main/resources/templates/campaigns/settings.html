@@ -30,8 +30,8 @@
     <!-- Spec 11.10 separates identity, progression, package, and danger. Progression has no
          campaign-level control today: `milestoneLeveling` is persisted on Campaign but is
          bound by no form and edited nowhere, and adding an editor is a functional change
-         that needs its own spec rather than a redesign task. The other three concerns are
-         separated here; `data` is the legacy v1 package format, kept with `packages`. -->
+         that needs its own spec rather than a redesign task. The remaining three concerns are
+         separated here as identity, package, and danger. -->
     <section class="card u-mt-lg" data-settings-group="identity">
         <h2>Identity</h2>
         <form th:hx-put="@{/campaigns/{id}(id=${campaign.id})}"
@@ -80,26 +80,6 @@
                     onclick="Alpine.$data(document.querySelector('[x-data=\'campaignImport\']')).openDialog()">
                 Import Campaign Package
             </button>
-        </div>
-    </section>
-
-    <section class="card u-mt-lg" data-settings-group="data">
-        <h2>Legacy data</h2>
-        <p class="text-muted u-text-sm">Tools for the pre-package v1 JSON format.</p>
-        <div class="dash-data-tools__body">
-            <a th:href="@{/campaigns/{id}/export(id=${campaign.id})}"
-               class="btn" download>Export Legacy v1 JSON</a>
-            <form hx-post="/campaigns/import"
-                  hx-encoding="multipart/form-data"
-                  hx-disabled-elt="find input[type='file']"
-                  class="u-contents">
-                <label class="btn">
-                    Import Legacy v1 JSON
-                    <input type="file" name="file" accept=".dmcampaign.json,application/json"
-                           onchange="this.form.requestSubmit()"
-                           class="hidden">
-                </label>
-            </form>
         </div>
     </section>
 

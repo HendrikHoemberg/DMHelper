@@ -8,8 +8,6 @@ import dev.hendrikhoemberg.dmhelper.campaign.readiness.ReadinessRepairService;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignScaleService;
 import dev.hendrikhoemberg.dmhelper.campaign.service.CampaignService;
-import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
-import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignValidationResult;
 import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.notes.data.Note;
@@ -21,11 +19,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -203,57 +197,4 @@ public class CampaignController {
                 .build();
     }
 
-    @GetMapping("/{id}/export")
-    public ResponseEntity<byte[]> exportCampaign(@PathVariable UUID id) {
-        Campaign campaign = service.findById(id);
-        String json = service.exportToJson(id);
-        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
-
-        String filename = URLEncoder.encode(
-                campaign.getName().replaceAll("[^a-zA-Z0-9._-]", "_") + ".dmcampaign.json",
-                StandardCharsets.UTF_8);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.setContentDisposition(ContentDisposition.attachment()
-                .filename(filename)
-                .build());
-
-        return new ResponseEntity<>(bytes, headers, HttpStatus.OK);
-    }
-
-    @PostMapping("/import")
-    public Object importCampaign(@RequestParam("file") MultipartFile file,
-                                  @RequestParam(defaultValue = "false") boolean dryRun,
-                                  Model model) {
-        if (file.isEmpty()) {
-            throw new IllegalArgumentException("No file uploaded");
-        }
-        try {
-            String json = new String(file.getBytes(), StandardCharsets.UTF_8);
-            if (dryRun) {
-                CampaignValidationResult result = service.validateImport(json);
-                return ResponseEntity.ok(DryRunResult.from(result));
-            }
-            Campaign campaign = service.importFromJson(json);
-            model.addAttribute("campaign", campaign);
-            model.addAttribute("sigil", CampaignSigil.from(campaign.getId()));
-            return "campaigns/_card";
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Failed to read uploaded file: " + e.getMessage());
-        }
-    }
-
-    public record DryRunResult(
-            boolean valid,
-            String status,
-            List<CampaignImportProblem> problems
-    ) {
-        static DryRunResult from(CampaignValidationResult result) {
-            return new DryRunResult(
-                    result.valid(),
-                    result.valid() ? "READY" : "BLOCKED",
-                    result.problems());
-        }
-    }
 }
