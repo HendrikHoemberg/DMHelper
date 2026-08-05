@@ -375,6 +375,8 @@ browser tier falls from 30 classes to 17.
 All line counts in this document are measured, not estimated, except those marked `~`, which
 are projections for code being rewritten rather than deleted.
 
-No capability that survives is degraded. Four capabilities are deliberately withdrawn:
-v1 campaign import, v1 campaign export, custom cockpit layout presets, and automated
-enforcement of visual style requirements.
+No capability that survives is degraded. Five capabilities are deliberately withdrawn:
+v1 campaign import, v1 campaign export, custom cockpit layout presets, automated
+enforcement of visual style requirements, and the served v1 map-document schema
+(`GET /api/v1/schemas/map-document.schema.json`), withdrawn because it describes a
+format the application can no longer read.

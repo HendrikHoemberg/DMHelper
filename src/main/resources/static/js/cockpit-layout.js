@@ -393,9 +393,6 @@
         }
       }
 
-      this.workbench.dataset.bottomCollapsed =
-        this.collapsedZones.has('BOTTOM_UTILITY') ? 'true' : 'false';
-
       document.querySelectorAll('[data-module-key]').forEach((shell) => {
         const key = shell.getAttribute('data-module-key');
         if (!placed.has(key) && this.depot && !this.depot.contains(shell)) {
