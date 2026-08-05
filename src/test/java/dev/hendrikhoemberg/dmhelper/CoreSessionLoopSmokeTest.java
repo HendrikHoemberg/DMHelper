@@ -1795,7 +1795,7 @@ class CoreSessionLoopSmokeTest {
 
     @Test
     @Order(34)
-    void cockpitLayoutStartsLockedAndSwitchesOnlyOnExplicitPresetChoice() {
+    void cockpitLayoutSwitchesOnlyOnExplicitPresetChoice() {
         // Self-sufficient when run alone (campaignId is normally set by @Order(1)).
         if (campaignId == null) {
             createCampaign();
@@ -1804,12 +1804,6 @@ class CoreSessionLoopSmokeTest {
         dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
         dmPage.waitForLoadState(LoadState.NETWORKIDLE);
         dmPage.waitForFunction("window.cockpitLayout?.mounted === true");
-
-        assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
-                .isEqualTo("locked");
-        assertThat(dmPage.locator("[data-cockpit-splitter]").all())
-                .allSatisfy(splitter -> assertThat(splitter.getAttribute("tabindex")).isEqualTo("-1"));
-        assertThat(dmPage.locator("[data-layout-edit-only]:visible").count()).isZero();
 
         String beforeSceneChange = dmPage.locator("#cockpitPresetPicker").inputValue();
         if (dmPage.locator("[data-current-scene]").count() > 0) {
@@ -2329,13 +2323,6 @@ class CoreSessionLoopSmokeTest {
         assertThat(((Number) loadingTiming.get("elapsed")).doubleValue())
                 .as("loading shell update within 100ms; B2 retains this and adds 2s endpoint-render")
                 .isLessThan(100.0);
-
-        // Locked: no layout edit control or splitter is keyboard-reachable.
-        assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
-                .isEqualTo("locked");
-        assertThat(dmPage.locator("[data-cockpit-splitter]").all())
-                .allSatisfy(splitter -> assertThat(splitter.getAttribute("tabindex")).isEqualTo("-1"));
-        assertThat(dmPage.locator("[data-layout-edit-only]:visible").count()).isZero();
 
         // Tabs: role, selected state, owned panels, arrow-key selection.
         Locator combatLeftTabs = dmPage.locator(

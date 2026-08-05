@@ -79,7 +79,6 @@ public class SessionController {
         model.addAttribute("initialQuickNotesView", moduleViews.quickNotes(campaignId));
         model.addAttribute("cockpitPresets", cockpitPresets.all());
         model.addAttribute("cockpitDefaultPresetKey", "builtin:exploration");
-        model.addAttribute("layoutEditing", true);
         addSeedEligibility(campaignId, workspace, model);
         return "session/cockpit";
     }

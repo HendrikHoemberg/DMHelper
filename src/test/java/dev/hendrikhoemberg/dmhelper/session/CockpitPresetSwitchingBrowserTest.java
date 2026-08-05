@@ -102,6 +102,17 @@ class CockpitPresetSwitchingBrowserTest {
                 .getAttribute("data-collapsed")).isEqualTo("true");
     }
 
+    @Test
+    void collapsedZoneCanBeExpandedAgain() {
+        page.click("[data-cockpit-zone='RIGHT_SUPPORT'] [data-zone-collapse]");
+        assertThat(page.locator("[data-cockpit-zone='RIGHT_SUPPORT']")
+                .getAttribute("data-collapsed")).isEqualTo("true");
+
+        page.click("[data-cockpit-zone='RIGHT_SUPPORT'] [data-zone-collapse]");
+        assertThat(page.locator("[data-cockpit-zone='RIGHT_SUPPORT']")
+                .getAttribute("data-collapsed")).isEqualTo("false");
+    }
+
     // --- The placement engine: this is the coverage the stage preamble exists for. ---
 
     @Test

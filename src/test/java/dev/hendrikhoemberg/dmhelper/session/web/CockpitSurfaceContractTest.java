@@ -18,10 +18,10 @@ class CockpitSurfaceContractTest {
     }
 
     @Test
-    void layoutChromeIsAbsentWhileLocked() throws Exception {
+    void layoutEditChromeIsAbsent() throws Exception {
         assertThat(cockpit())
-                .as("spec 12.5: no layout editing chrome while locked")
-                .contains("th:if=\"${layoutEditing}\"");
+                .as("spec 12.5: the layout editing controls were removed with the engine")
+                .doesNotContain("layoutEditing", "data-layout-edit-only", "cockpitLayoutModeButton");
     }
 
     @Test

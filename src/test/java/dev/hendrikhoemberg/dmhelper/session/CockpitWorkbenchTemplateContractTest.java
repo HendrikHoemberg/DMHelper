@@ -88,16 +88,12 @@ class CockpitWorkbenchTemplateContractTest {
         assertThat(document.select("[data-cockpit-workbench]")).hasSize(1);
         assertThat(document.select("[data-cockpit-zone]")).extracting(e -> e.attr("data-cockpit-zone"))
                 .containsExactlyInAnyOrder("PRIMARY", "LEFT_SUPPORT", "RIGHT_SUPPORT", "BOTTOM_UTILITY");
-        assertThat(document.select("[role=separator][aria-orientation]")).hasSize(3);
+        assertThat(document.select("[role=separator][aria-orientation]")).hasSize(0);
         assertThat(document.select(".cockpit-module[data-module-key]")).extracting(e -> e.attr("data-module-key"))
                 .containsExactlyInAnyOrderElementsOf(registry.all().stream()
                         .map(CockpitModuleDefinition::key).toList());
         assertThat(document.select(".cockpit-module[data-module-key]")).extracting(e -> e.attr("data-module-key"))
                 .doesNotHaveDuplicates();
-        assertThat(document.select("#cockpitLayoutModeButton")).singleElement()
-                .satisfies(button -> assertThat(button.text()).contains("Edit layout"));
-        assertThat(document.select("[data-layout-edit-only]")).allSatisfy(
-                node -> assertThat(node.hasAttr("hidden")).isTrue());
     }
 
     @Test
@@ -121,8 +117,8 @@ class CockpitWorkbenchTemplateContractTest {
                 .containsExactlyInAnyOrder("map", "encounter", "session-log");
         assertThat(document.select("[data-cockpit-zone=BOTTOM_UTILITY]").attr("data-collapsed"))
                 .isEqualTo("false");
-        assertThat(document.select("[data-cockpit-workbench]").attr("data-bottom-collapsed"))
-                .isEqualTo("false");
+        assertThat(document.select("[data-cockpit-workbench]").attr("data-cockpit-preset"))
+                .isEqualTo("builtin:exploration");
     }
 
     @Test
@@ -134,25 +130,7 @@ class CockpitWorkbenchTemplateContractTest {
                     assertThat(el.hasAttr("disabled")).isTrue();
                     assertThat(el.attr("aria-disabled")).isEqualTo("true");
                 });
-        assertThat(document.select("#cockpitLayoutModeButton")).singleElement()
-                .satisfies(el -> {
-                    assertThat(el.hasAttr("disabled")).isTrue();
-                    assertThat(el.attr("aria-disabled")).isEqualTo("true");
-                });
-        assertThat(document.select("#cockpitAddModuleButton")).singleElement()
-                .satisfies(el -> {
-                    assertThat(el.hasAttr("disabled")).isTrue();
-                    assertThat(el.attr("aria-disabled")).isEqualTo("true");
-                });
         assertThat(document.select("#cockpitFocusReturn")).hasSize(1);
-        assertThat(document.select("[data-bottom-utility-toggle]")).singleElement()
-                .satisfies(el -> {
-                    assertThat(el.hasAttr("hidden")).isTrue();
-                    assertThat(el.attr("aria-expanded")).isEqualTo("false");
-                });
-        assertThat(document.select("#cockpitAddModuleDialog")).hasSize(1);
-        assertThat(document.select("#cockpitLayoutExitDialog")).hasSize(1);
-        assertThat(document.select("#cockpitPresetNameDialog")).hasSize(1);
         assertThat(document.select("#cockpitLayoutNotice")).hasSize(1);
         assertThat(document.html()).contains("cockpitLayoutConfig");
     }

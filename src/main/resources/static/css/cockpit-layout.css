@@ -1,4 +1,6 @@
-/* B1 four-zone module workbench — viewport, grid, edit chrome, focus, reduced motion. */
+/* Four fixed cockpit layouts. The active one is selected by [data-cockpit-preset] on the
+   workbench; zones are placed by grid-area. Replaced the resizable/dockable engine on
+   2026-08-04. */
 
 /* Pin the page to the visual viewport so the document never becomes a scroll root.
    Only <html> is position:fixed (viewport-relative). <body> and .session-cockpit use
@@ -76,12 +78,6 @@ body:has(.session-cockpit) .page--editor {
   white-space: nowrap;
 }
 
-#runtimeStatus {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .cockpit-commandbar .btn,
 .cockpit-topbar .btn,
 .cockpit-commandbar button,
@@ -90,65 +86,56 @@ body:has(.session-cockpit) .page--editor {
   min-height: 32px;
 }
 
-.cockpit-workbench {
-  /* Generic column ratios until the fixed per-preset grids land (Task 13): wide enough
-     on the left that Combat's LEFT_SUPPORT keeps tabs, and on the right that the combatant
-     rail fits its names. The layout script no longer sets per-preset ratios. */
-  --left-size: 18fr;
-  --primary-size: 52fr;
-  --right-size: 30fr;
-  --top-size: 76fr;
-  --bottom-size: 24fr;
-  --splitter-size: 6px;
+/* ── Workbench: the grid container and the preset selector are the same element. ── */
+[data-cockpit-workbench] {
   flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns:
-    minmax(0, var(--left-size)) var(--splitter-size)
-    minmax(0, var(--primary-size)) var(--splitter-size)
-    minmax(0, var(--right-size));
-  grid-template-rows:
-    minmax(0, var(--top-size))
-    var(--splitter-size) minmax(0, var(--bottom-size));
+  gap: var(--space-sm);
+  height: 100%;
+  grid-template-rows: 1fr auto;
   overflow: hidden;
 }
 
-.cockpit-zone--left {
-  grid-column: 1;
-  grid-row: 1;
+[data-cockpit-preset="builtin:exploration"] {
+  grid-template-columns: 18fr 64fr 18fr;
+  grid-template-areas:
+    "left primary right"
+    "bottom bottom bottom";
 }
 
-.cockpit-splitter--left {
-  grid-column: 2;
-  grid-row: 1;
+[data-cockpit-preset="builtin:combat"] {
+  grid-template-columns: 18fr 52fr 30fr;
+  grid-template-areas:
+    "left primary right"
+    "bottom bottom bottom";
 }
 
-.cockpit-zone--primary {
-  grid-column: 3;
-  grid-row: 1;
+[data-cockpit-preset="builtin:theatre-of-mind"] {
+  grid-template-columns: 19fr 50fr 31fr;
+  grid-template-areas:
+    "left primary right"
+    "bottom bottom bottom";
 }
 
-.cockpit-splitter--right {
-  grid-column: 4;
-  grid-row: 1;
+[data-cockpit-preset="builtin:session-review"] {
+  grid-template-columns: 22fr 56fr 22fr;
+  grid-template-areas:
+    "left primary right"
+    "bottom bottom bottom";
 }
 
-.cockpit-zone--right {
-  grid-column: 5;
-  grid-row: 1;
-}
+[data-cockpit-zone="LEFT_SUPPORT"]  { grid-area: left; }
+[data-cockpit-zone="PRIMARY"]       { grid-area: primary; }
+[data-cockpit-zone="RIGHT_SUPPORT"] { grid-area: right; }
+[data-cockpit-zone="BOTTOM_UTILITY"]{ grid-area: bottom; }
 
-.cockpit-splitter--bottom {
-  grid-column: 1 / -1;
-  grid-row: 2;
-}
+/* Collapse hides only the panels so the zone's tab bar (and its collapse button) stays
+   visible and the zone can be re-expanded. */
+[data-cockpit-zone][data-collapsed="true"] > [data-zone-panels] { display: none; }
 
-.cockpit-zone--bottom {
-  grid-column: 1 / -1;
-  grid-row: 3;
-}
-
+/* ── Zone chrome ── */
 .cockpit-zone {
   min-width: 0;
   min-height: 0;
@@ -162,10 +149,6 @@ body:has(.session-cockpit) .page--editor {
   container-type: inline-size;
 }
 
-.cockpit-zone[data-collapsed="true"] {
-  display: none;
-}
-
 /* A constrained support zone collapses its modules to role=tablist tabs; a wide one stacks
    them so every module shares the zone height (spec 12.4). */
 .cockpit-zone[data-zone-mode="stacked"] .cockpit-zone__tabs {
@@ -174,16 +157,6 @@ body:has(.session-cockpit) .page--editor {
 
 .cockpit-zone[data-zone-mode="stacked"] .cockpit-zone__panel {
   min-height: 0;
-}
-
-.cockpit-workbench[data-bottom-collapsed="true"] {
-  --top-size: 1fr;
-  --bottom-size: 0fr;
-  grid-template-rows: minmax(0, 1fr) 0 minmax(0, 0fr);
-}
-
-.cockpit-workbench[data-bottom-collapsed="true"] .cockpit-splitter--bottom {
-  display: none;
 }
 
 .cockpit-module,
@@ -208,22 +181,8 @@ body:has(.session-cockpit) .page--editor {
 }
 
 .cockpit-workbench [hidden],
-.cockpit-module-depot[hidden],
-[data-layout-edit-only][hidden] {
+.cockpit-module-depot[hidden] {
   display: none !important;
-}
-
-/* .btn rules can override the UA [hidden] stylesheet; force lock-mode chrome off. */
-.session-cockpit:has([data-layout-mode="locked"]) [data-layout-edit-only] {
-  display: none !important;
-}
-
-/* Edit-only chrome inside the command bar's More panel keeps its box while locked: the
-   closed <details> already suppresses the panel with content-visibility, and forcing
-   display:none there reads as a zero-width clipped control to geometry checks. */
-[data-cockpit-commandbar] [data-layout-edit-only][hidden] {
-  display: inline-flex !important;
-  visibility: hidden;
 }
 
 /* ── Tabs ── */
@@ -335,8 +294,6 @@ body:has(.session-cockpit) .page--editor {
 .cockpit-module__actions button,
 .cockpit-module__header button,
 [data-module-focus],
-[data-module-menu],
-[data-module-remove],
 [data-module-retry] {
   min-width: 32px;
   min-height: 32px;
@@ -353,73 +310,6 @@ body:has(.session-cockpit) .page--editor {
 .cockpit-module__header button:hover {
   background: var(--surface-raised);
   border-color: var(--border-strong);
-}
-
-/* ── Splitters: locked = invisible + inert; edit = 6px line + 32px hit target ── */
-.cockpit-splitter {
-  position: relative;
-  margin: 0;
-  padding: 0;
-  border: none;
-  background: transparent;
-  pointer-events: none;
-  cursor: default;
-  z-index: 1;
-}
-
-.cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter {
-  background: var(--border-subtle);
-  pointer-events: auto;
-  cursor: col-resize;
-}
-
-.cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter--bottom {
-  cursor: row-resize;
-}
-
-/* Transparent 32px hit expansion around the 6px visual track. */
-.cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter::after {
-  content: "";
-  position: absolute;
-  z-index: 1;
-}
-
-.cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter--left::after,
-.cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter--right::after {
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  width: 32px;
-  transform: translateX(-50%);
-}
-
-.cockpit-workbench[data-layout-mode="edit"] .cockpit-splitter--bottom::after {
-  left: 0;
-  right: 0;
-  top: 50%;
-  height: 32px;
-  transform: translateY(-50%);
-}
-
-[data-cockpit-splitter][aria-disabled="true"] { cursor: default; }
-[data-cockpit-splitter][aria-disabled="false"] { cursor: col-resize; }
-
-.cockpit-splitter:focus-visible {
-  outline: 3px solid var(--action-primary);
-  outline-offset: -1px;
-}
-
-/* ── Docking targets (edit mode) ── */
-.cockpit-workbench[data-layout-mode="edit"] .cockpit-zone[data-dock-target] {
-  outline: 1px dashed color-mix(in srgb, var(--state-shield) 55%, transparent);
-  outline-offset: -2px;
-}
-
-.cockpit-workbench[data-layout-mode="edit"] .cockpit-zone[data-dock-active="true"] {
-  outline: 2px solid var(--action-primary);
-  outline-offset: -2px;
-  background: color-mix(in srgb, var(--selection-surface) 35%, var(--surface-canvas));
-  box-shadow: inset 0 0 0 1px var(--state-shield-surface);
 }
 
 /* ── Focus layer fills the workbench band under the command bar ── */
@@ -468,7 +358,7 @@ body:has(.session-cockpit) .page--editor {
   flex: 1 1 auto;
 }
 
-/* ── Depot, notices, overflow menus ── */
+/* ── Depot, notices, topbar overflow ── */
 .cockpit-module-depot {
   position: absolute;
   width: 1px;
@@ -477,27 +367,22 @@ body:has(.session-cockpit) .page--editor {
   clip: rect(0 0 0 0);
 }
 
-
-.cockpit-topbar__overflow,
-.cockpit-preset-overflow {
+.cockpit-topbar__overflow {
   position: relative;
 }
 
-.cockpit-topbar__overflow summary,
-.cockpit-preset-overflow summary {
+.cockpit-topbar__overflow summary {
   list-style: none;
   cursor: pointer;
   min-width: 32px;
   min-height: 32px;
 }
 
-.cockpit-topbar__overflow summary::-webkit-details-marker,
-.cockpit-preset-overflow summary::-webkit-details-marker {
+.cockpit-topbar__overflow summary::-webkit-details-marker {
   display: none;
 }
 
-.cockpit-topbar__overflow-panel,
-.cockpit-preset-overflow__panel {
+.cockpit-topbar__overflow-panel {
   position: absolute;
   right: 0;
   z-index: var(--z-workspace-chrome);
@@ -513,11 +398,6 @@ body:has(.session-cockpit) .page--editor {
   box-shadow: var(--shadow);
 }
 
-.cockpit-preset-overflow__panel {
-  min-width: 12rem;
-  gap: 2px;
-}
-
 .cockpit-layout-notice {
   min-height: 0;
   padding: 0 var(--space-md);
@@ -530,49 +410,8 @@ body:has(.session-cockpit) .page--editor {
   padding-bottom: 2px;
 }
 
-/* ── Arrange menu + layout dialogs (elevation / focus model) ── */
-.cockpit-arrange-menu {
-  position: fixed;
-  z-index: var(--z-workspace-menu);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 12rem;
-  padding: var(--space-xs);
-  background: var(--elevation-floating-bg);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-}
-
-.cockpit-arrange-menu[hidden] {
-  display: none !important;
-}
-
-.cockpit-arrange-menu button {
-  min-height: 32px;
-  text-align: left;
-  padding: 6px 10px;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--text-primary);
-  cursor: pointer;
-  font-size: var(--text-sm);
-}
-
-.cockpit-arrange-menu button:hover {
-  background: var(--surface-raised);
-  border-color: var(--border-strong);
-}
-
-.cockpit-arrange-menu button:focus-visible {
-  background: var(--surface-raised);
-  border-color: var(--action-primary);
-}
-
-.cockpit-dialog,
-.cockpit-layout-dialog {
+/* ── Dialogs (elevation / focus model) ── */
+.cockpit-dialog {
   max-inline-size: min(28rem, calc(100vw - 2rem));
   max-block-size: calc(100dvh - 2rem);
   margin: auto;
@@ -584,25 +423,21 @@ body:has(.session-cockpit) .page--editor {
   box-shadow: var(--shadow);
 }
 
-.cockpit-dialog::backdrop,
-.cockpit-layout-dialog::backdrop {
+.cockpit-dialog::backdrop {
   background: var(--scrim-strong);
   backdrop-filter: blur(4px);
 }
 
-.cockpit-dialog:not([open]),
-.cockpit-layout-dialog:not([open]) {
+.cockpit-dialog:not([open]) {
   display: none;
 }
 
-.cockpit-dialog h2,
-.cockpit-layout-dialog h2 {
+.cockpit-dialog h2 {
   margin: 0 0 var(--space-sm);
   font-size: var(--text-lg);
 }
 
-.cockpit-dialog p,
-.cockpit-layout-dialog p {
+.cockpit-dialog p {
   margin: 0 0 var(--space-md);
   color: var(--text-secondary);
   font-size: var(--text-sm);
@@ -617,51 +452,16 @@ body:has(.session-cockpit) .page--editor {
 }
 
 .cockpit-dialog__actions .btn,
-.cockpit-dialog .btn,
-.cockpit-layout-dialog .btn {
+.cockpit-dialog .btn {
   min-width: 32px;
   min-height: 32px;
-}
-
-.cockpit-dialog [data-add-module-list] {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  max-height: 16rem;
-  overflow: auto;
-}
-
-.cockpit-dialog [data-add-module] {
-  min-height: 32px;
-  width: 100%;
-  text-align: left;
-  padding: 6px 10px;
-  border: 1px solid var(--border-subtle);
-  border-radius: 4px;
-  background: var(--surface-panel);
-  color: var(--text-primary);
-  cursor: pointer;
-}
-
-.cockpit-dialog [data-add-module]:hover {
-  border-color: var(--border-strong);
-  background: var(--surface-raised);
-}
-
-.cockpit-dialog [data-add-module]:focus-visible {
-  border-color: var(--action-primary);
-  background: var(--surface-raised);
 }
 
 /* ── Focus outline ── */
 .session-cockpit :focus-visible,
 .cockpit-workbench :focus-visible,
 .cockpit-focus-layer :focus-visible,
-.cockpit-dialog:focus-visible,
-.cockpit-layout-dialog:focus-visible {
+.cockpit-dialog:focus-visible {
   outline: 3px solid var(--action-primary);
   outline-offset: 2px;
 }
@@ -669,9 +469,7 @@ body:has(.session-cockpit) .page--editor {
 @media (prefers-reduced-motion: reduce) {
   .cockpit-workbench *,
   .cockpit-focus-layer *,
-  .cockpit-layout-dialog *,
-  .cockpit-dialog *,
-  .cockpit-arrange-menu * {
+  .cockpit-dialog * {
     scroll-behavior: auto !important;
     transition-duration: 0.001ms !important;
     animation-duration: 0.001ms !important;
@@ -685,8 +483,10 @@ body:has(.session-cockpit) .page--editor {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  font-size: var(--text-sm);
 }
 
 .cockpit-status__atom {

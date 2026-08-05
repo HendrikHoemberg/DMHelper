@@ -10,8 +10,6 @@
 <section class="cockpit-workbench"
          data-cockpit-workbench
          data-cockpit-preset="builtin:exploration"
-         data-layout-mode="locked"
-         data-bottom-collapsed="false"
          aria-label="Session workspace">
 
   <!-- LEFT_SUPPORT: session-plan -->
@@ -42,11 +40,6 @@
     </div>
   </div>
 
-  <button type="button" class="cockpit-splitter cockpit-splitter--left"
-          data-cockpit-splitter="LEFT_PRIMARY" role="separator"
-          aria-orientation="vertical" aria-valuemin="10" aria-valuemax="35"
-          aria-valuenow="20" aria-label="Resize left support" tabindex="-1"></button>
-
   <!-- PRIMARY: story -->
   <div class="cockpit-zone cockpit-zone--primary"
        data-cockpit-zone="PRIMARY"
@@ -75,11 +68,6 @@
     </div>
   </div>
 
-  <button type="button" class="cockpit-splitter cockpit-splitter--right"
-          data-cockpit-splitter="PRIMARY_RIGHT" role="separator"
-          aria-orientation="vertical" aria-valuemin="15" aria-valuemax="35"
-          aria-valuenow="24" aria-label="Resize right support" tabindex="-1"></button>
-
   <!-- RIGHT_SUPPORT: party -->
   <div class="cockpit-zone cockpit-zone--right"
        data-cockpit-zone="RIGHT_SUPPORT"
@@ -107,11 +95,6 @@
       </div>
     </div>
   </div>
-
-  <button type="button" class="cockpit-splitter cockpit-splitter--bottom"
-          data-cockpit-splitter="BOTTOM_UTILITY" role="separator"
-          aria-orientation="horizontal" aria-valuemin="16" aria-valuemax="40"
-          aria-valuenow="24" aria-label="Resize bottom utility" tabindex="-1"></button>
 
   <!-- BOTTOM_UTILITY: quick-notes (active), audio, reference (expanded) -->
   <div id="cockpitBottomUtility" class="cockpit-zone cockpit-zone--bottom"
@@ -192,47 +175,6 @@
   </div>
   <div class="cockpit-focus-layer__mount" data-focus-mount></div>
 </div>
-
-<!-- Arrange menu (shared; controller fills targets). Hidden until edit mode. -->
-<div id="cockpitModuleArrangeMenu" class="cockpit-arrange-menu" hidden data-layout-edit-only role="menu"
-     aria-label="Arrange module">
-  <button type="button" class="btn btn-ghost btn-xs" role="menuitem" data-arrange-zone="PRIMARY">Move to Primary</button>
-  <button type="button" class="btn btn-ghost btn-xs" role="menuitem" data-arrange-zone="LEFT_SUPPORT">Move to Left support</button>
-  <button type="button" class="btn btn-ghost btn-xs" role="menuitem" data-arrange-zone="RIGHT_SUPPORT">Move to Right support</button>
-  <button type="button" class="btn btn-ghost btn-xs" role="menuitem" data-arrange-zone="BOTTOM_UTILITY">Move to Bottom utility</button>
-  <button type="button" class="btn btn-ghost btn-xs" role="menuitem" data-arrange-move="earlier">Move earlier</button>
-  <button type="button" class="btn btn-ghost btn-xs" role="menuitem" data-arrange-move="later">Move later</button>
-</div>
-
-<dialog id="cockpitAddModuleDialog" class="cockpit-dialog" aria-labelledby="cockpitAddModuleTitle">
-  <h2 id="cockpitAddModuleTitle">Add module</h2>
-  <p>Choose a module that is not already in the workspace, then pick an allowed zone.</p>
-  <ul data-add-module-list></ul>
-  <form method="dialog">
-    <button type="submit" class="btn btn-ghost" id="cockpitAddModuleClose">Close</button>
-  </form>
-</dialog>
-
-<dialog id="cockpitLayoutExitDialog" class="cockpit-dialog" aria-labelledby="cockpitLayoutExitTitle">
-  <h2 id="cockpitLayoutExitTitle">Leave layout edit?</h2>
-  <p>Save your custom layout, discard changes, or keep editing.</p>
-  <div class="cockpit-dialog__actions">
-    <button type="button" class="btn btn-primary" data-layout-exit="save">Save layout</button>
-    <button type="button" class="btn btn-ghost" data-layout-exit="discard">Discard</button>
-    <button type="button" class="btn btn-ghost" data-layout-exit="cancel">Keep editing</button>
-  </div>
-</dialog>
-
-<dialog id="cockpitPresetNameDialog" class="cockpit-dialog" aria-labelledby="cockpitPresetNameTitle">
-  <h2 id="cockpitPresetNameTitle">Name custom layout</h2>
-  <label for="cockpitPresetNameInput">Layout name
-    <input id="cockpitPresetNameInput" type="text" class="form-input" maxlength="80" autocomplete="off">
-  </label>
-  <div class="cockpit-dialog__actions">
-    <button type="button" class="btn" data-preset-name="confirm">Save</button>
-    <button type="button" class="btn btn-ghost" data-preset-name="cancel">Cancel</button>
-  </div>
-</dialog>
 
 <div id="cockpitLayoutNotice" class="cockpit-layout-notice" role="status" aria-live="polite"></div>
 

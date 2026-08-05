@@ -20,10 +20,6 @@
       <button type="button" class="btn btn-ghost btn-xs" data-module-focus
               th:if="${module.focusSupported}"
               th:attr="aria-label=|Focus ${module.title}|">Focus</button>
-      <button type="button" class="btn btn-ghost btn-xs" data-module-menu data-layout-edit-only hidden
-              th:attr="aria-label=|Arrange ${module.title}|">Arrange</button>
-      <button type="button" class="btn btn-danger btn-xs action-row__destructive" data-module-remove data-layout-edit-only hidden
-              th:attr="aria-label=|Remove ${module.title}|">Remove</button>
     </div>
   </header>
   <div class="cockpit-module__status" data-module-status aria-live="polite" hidden></div>

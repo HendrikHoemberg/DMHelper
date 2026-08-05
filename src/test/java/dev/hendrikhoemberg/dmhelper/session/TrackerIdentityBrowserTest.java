@@ -304,21 +304,6 @@ class TrackerIdentityBrowserTest {
         assertThat((List<?>) truncated).as("names must survive default rail width").isEmpty();
     }
 
-    @Test
-    void theSplitterStaysInertWithoutAnEditMode() {
-        openCombat();
-        var splitter = page.locator("[data-cockpit-splitter='PRIMARY_RIGHT']");
-        assertThat(splitter.getAttribute("tabindex")).isEqualTo("-1");
-        String before = (String) page.evaluate(
-                "() => getComputedStyle(document.querySelector('[data-cockpit-workbench]'))"
-                        + ".getPropertyValue('--primary-size')");
-        splitter.dispatchEvent("pointerdown");
-        String after = (String) page.evaluate(
-                "() => getComputedStyle(document.querySelector('[data-cockpit-workbench]'))"
-                        + ".getPropertyValue('--primary-size')");
-        assertThat(after).as("an inert splitter must not resize the workbench").isEqualTo(before);
-    }
-
     // ── Task 9 ──────────────────────────────────────────────────────────────────
 
     @Test
