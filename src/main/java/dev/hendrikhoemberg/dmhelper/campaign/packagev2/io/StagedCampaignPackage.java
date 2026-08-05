@@ -10,7 +10,7 @@ import java.util.Map;
 
 public class StagedCampaignPackage implements Closeable {
 
-    public enum ContainerKind { V1_JSON, V2_JSON, V3_JSON, V2_ZIP }
+    public enum ContainerKind { V2_JSON, V3_JSON, V2_ZIP }
 
     private final Path stagingDirectory;
     private final Path manifestPath;

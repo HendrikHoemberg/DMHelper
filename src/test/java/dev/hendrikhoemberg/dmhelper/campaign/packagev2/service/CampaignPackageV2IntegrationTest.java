@@ -1,7 +1,10 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.service;
 
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageReader;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageWriteRequest;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.CampaignPackageWriter;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.StagedCampaignPackage;
+import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.preview.CampaignImportPreviewStore;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation.CampaignPackageValidationPipeline;
 import dev.hendrikhoemberg.dmhelper.session.data.CockpitLayoutPresetRepository;
@@ -13,15 +16,19 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.InputStreamSource;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -43,57 +50,10 @@ class CampaignPackageV2IntegrationTest {
     @TempDir Path temp;
 
     @Test
-    void previewConfirmExportAndRepreviewPreservesCurrentSurfaceAndKeys() throws Exception {
-        var source = new ClassPathResource("campaigns/v1/feature-complete.dmcampaign.json");
-        var initialStaged = new CampaignPackageReader(temp.resolve("initial")).read(source.getInputStream(),
-                "legacy.dmcampaign.json", "application/json");
-        var initial = pipeline.validate(initialStaged);
-        assertThat(initial.valid()).as(initial.problems().toString()).isTrue();
-
-        var campaign = importer.confirm(previews.retain(initial).previewId(), true);
-        CampaignPackageArtifact artifact = exporter.export(campaign.getId());
-
-        assertThat(artifact.zipped()).isTrue();
-        assertThat(artifact.manifest().party()).hasSize(1);
-        assertThat(artifact.manifest().maps()).hasSize(1);
-        assertThat(artifact.manifest().encounters()).hasSize(1);
-        assertThat(artifact.manifest().adventures()).hasSize(1);
-        assertThat(artifact.manifest().metadata().exclusions()).isEmpty();
-
-        assertThat(artifact.manifest().campaign().key()).isEqualTo(initial.manifest().campaign().key());
-        assertThat(artifact.manifest().party().getFirst().key()).isEqualTo(initial.manifest().party().getFirst().key());
-        assertThat(artifact.manifest().party().getFirst().sheet().key())
-                .isEqualTo(initial.manifest().party().getFirst().sheet().key());
-        assertThat(artifact.manifest().party().getFirst().sheet().resources().getFirst().key())
-                .isEqualTo(initial.manifest().party().getFirst().sheet().resources().getFirst().key());
-        assertThat(artifact.manifest().maps().getFirst().tokens().getFirst().key())
-                .isEqualTo(initial.manifest().maps().getFirst().tokens().getFirst().key());
-        assertThat(artifact.manifest().adventures().getFirst().chapters().getFirst().scenes().getFirst().key())
-                .isEqualTo(initial.manifest().adventures().getFirst().chapters().getFirst().scenes().getFirst().key());
-
-        var bytes = new ByteArrayOutputStream();
-        new CampaignPackageWriter().write(artifact.writeRequest(), bytes);
-        var reread = new CampaignPackageReader(temp.resolve("reread")).read(
-                new ByteArrayInputStream(bytes.toByteArray()), artifact.filename(), artifact.mediaType().toString());
-        var reparsed = pipeline.validate(reread);
-
-        assertThat(reparsed.valid()).as(reparsed.problems().toString()).isTrue();
-        assertThat(reparsed.manifest().metadata().exclusions()).isEmpty();
-        assertThat(reparsed.manifest().party()).hasSize(artifact.manifest().party().size());
-        assertThat(reparsed.manifest().maps()).hasSize(artifact.manifest().maps().size());
-        assertThat(reparsed.manifest().encounters()).hasSize(artifact.manifest().encounters().size());
-        assertThat(reparsed.manifest().adventures()).hasSize(artifact.manifest().adventures().size());
-        reread.close();
-        campaigns.delete(campaign.getId());
-    }
-
-    @Test
     void customCockpitLayoutPresetsAreExcludedFromPackageV2ExportAndSurviveImport() throws Exception {
         ensureSentinelPreset();
 
-        var source = new ClassPathResource("campaigns/v1/feature-complete.dmcampaign.json");
-        var staged = new CampaignPackageReader(temp.resolve("sentinel-in")).read(source.getInputStream(),
-                "legacy.dmcampaign.json", "application/json");
+        var staged = stageV2FeatureComplete("sentinel-in");
         var validated = pipeline.validate(staged);
         assertThat(validated.valid()).as(validated.problems().toString()).isTrue();
         var campaign = importer.confirm(previews.retain(validated).previewId(), true);
@@ -135,6 +95,30 @@ class CampaignPackageV2IntegrationTest {
                 exploration.ratios(),
                 exploration.compactModuleKeys());
         cockpitLayoutPresets.create(new SavePresetRequest(SENTINEL, layout));
+    }
+
+    private StagedCampaignPackage stageV2FeatureComplete(String stagingLabel) throws Exception {
+        var mapper = JsonMapper.builder().build();
+        CampaignManifestV2 manifest;
+        try (var input = new ClassPathResource(
+                "campaigns/v2/feature-complete.dmcampaign/manifest.json").getInputStream()) {
+            manifest = mapper.readValue(input, CampaignManifestV2.class);
+        }
+        Map<String, InputStreamSource> assets = new LinkedHashMap<>();
+        for (var descriptor : manifest.assets()) {
+            byte[] bytes;
+            try (var input = new ClassPathResource(
+                    "campaigns/v2/feature-complete.dmcampaign/" + descriptor.path()).getInputStream()) {
+                bytes = input.readAllBytes();
+            }
+            assets.put(descriptor.key(), new ByteArrayResource(bytes));
+        }
+        var output = new ByteArrayOutputStream();
+        new CampaignPackageWriter().write(new CampaignPackageWriteRequest(
+                "feature-complete.dmcampaign", manifest, assets), output);
+        return new CampaignPackageReader(temp.resolve(stagingLabel)).read(
+                new ByteArrayInputStream(output.toByteArray()),
+                "feature-complete.dmcampaign", "application/vnd.dmhelper.campaign+zip");
     }
 
     private static List<String> listZipEntryNames(byte[] zipBytes) throws Exception {

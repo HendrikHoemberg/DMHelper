@@ -71,7 +71,6 @@ public final class CampaignPackageReader {
             throw problem(ImportProblemCodes.INVALID_JSON, "Manifest is not valid JSON");
         }
         var kind = switch (version) {
-            case 1 -> StagedCampaignPackage.ContainerKind.V1_JSON;
             case 2 -> StagedCampaignPackage.ContainerKind.V2_JSON;
             case 3 -> StagedCampaignPackage.ContainerKind.V3_JSON;
             default -> throw problem(ImportProblemCodes.UNSUPPORTED_FORMAT_VERSION, "Unsupported or missing formatVersion");

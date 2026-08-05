@@ -1,5 +1,6 @@
 package dev.hendrikhoemberg.dmhelper.campaign.packagev2.io;
 
+import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportProblemCodes;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.jupiter.api.Test;
@@ -24,6 +25,20 @@ class CampaignPackageReaderTest {
                 "campaign.dmcampaign.json", "application/json")) {
             assertThat(staged.containerKind()).isEqualTo(StagedCampaignPackage.ContainerKind.V2_JSON);
         }
+    }
+
+    @Test
+    void v1JsonIsRejectedWithUnsupportedFormatVersion() throws Exception {
+        byte[] bytes = """
+                {"formatVersion":1,"campaign":{"name":"Legacy"}}"""
+                .getBytes(StandardCharsets.UTF_8);
+        var reader = new CampaignPackageReader(temp);
+
+        assertThatThrownBy(() -> reader.read(
+                new ByteArrayInputStream(bytes), "legacy.dmcampaign.json", "application/json"))
+                .isInstanceOf(CampaignPackageException.class)
+                .extracting(e -> ((CampaignPackageException) e).problem().code())
+                .isEqualTo(ImportProblemCodes.UNSUPPORTED_FORMAT_VERSION);
     }
 
     @Test

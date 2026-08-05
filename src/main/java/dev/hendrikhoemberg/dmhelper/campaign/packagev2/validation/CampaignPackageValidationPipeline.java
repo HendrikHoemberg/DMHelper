@@ -3,10 +3,8 @@ package dev.hendrikhoemberg.dmhelper.campaign.packagev2.validation;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.catalog.CampaignCatalogService;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.AssetSignatureValidator;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.io.StagedCampaignPackage;
-import dev.hendrikhoemberg.dmhelper.campaign.packagev2.migration.FormatMigrationRegistry;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportProblem;
-import dev.hendrikhoemberg.dmhelper.campaign.service.validation.CampaignImportValidator;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportProblemCodes;
 import dev.hendrikhoemberg.dmhelper.campaign.service.validation.ImportSeverity;
 import org.springframework.stereotype.Component;
@@ -25,46 +23,27 @@ public class CampaignPackageValidationPipeline {
     private final CampaignManifestV2SchemaValidator schema;
     private final CampaignManifestV2SemanticValidator semantics;
     private final CampaignCatalogService catalog;
-    private final FormatMigrationRegistry migrations;
-    private final CampaignImportValidator v1Validator;
     private final JsonMapper mapper = JsonMapper.builder().build();
 
     public CampaignPackageValidationPipeline(CampaignManifestV2SchemaValidator schema,
                                              CampaignManifestV2SemanticValidator semantics,
-                                             CampaignCatalogService catalog,
-                                             FormatMigrationRegistry migrations,
-                                             CampaignImportValidator v1Validator) {
+                                             CampaignCatalogService catalog) {
         this.schema = schema;
         this.semantics = semantics;
         this.catalog = catalog;
-        this.migrations = migrations;
-        this.v1Validator = v1Validator;
     }
 
     public CampaignPackageValidationResult validate(StagedCampaignPackage staged) {
         try {
-            CampaignManifestV2 manifest;
-            int sourceVersion;
-            Map<String, Path> migratedAssets = Map.of();
             List<CampaignImportProblem> problems = new ArrayList<>();
+            String json = Files.readString(staged.manifestPath());
+            List<CampaignImportProblem> schemaProblems = schema.validate(json);
+            if (!schemaProblems.isEmpty()) return new CampaignPackageValidationResult(staged, null, 2,
+                    Map.of(), schemaProblems, List.of());
+            CampaignManifestV2 manifest = mapper.readValue(json, CampaignManifestV2.class);
+            int sourceVersion = manifest.formatVersion();
+            Map<String, Path> migratedAssets = Map.of();
             List<String> migrationLabels = List.of();
-            if (staged.containerKind() == StagedCampaignPackage.ContainerKind.V1_JSON) {
-                var migrated = migrations.toCurrent(staged, v1Validator);
-                if (migrated == null) return unsupported(staged, 1);
-                if (!migrated.valid() || migrated.manifest() == null) return migrated;
-                manifest = migrated.manifest();
-                sourceVersion = migrated.sourceFormatVersion();
-                migratedAssets = migrated.assetsByKey();
-                problems.addAll(migrated.problems());
-                migrationLabels = migrated.migrations();
-            } else {
-                String json = Files.readString(staged.manifestPath());
-                List<CampaignImportProblem> schemaProblems = schema.validate(json);
-                if (!schemaProblems.isEmpty()) return new CampaignPackageValidationResult(staged, null, 2,
-                        Map.of(), schemaProblems, List.of());
-                manifest = mapper.readValue(json, CampaignManifestV2.class);
-                sourceVersion = manifest.formatVersion();
-            }
 
             List<CampaignImportProblem> canonicalSchema = schema.validate(mapper.writeValueAsString(manifest));
             if (!canonicalSchema.isEmpty()) return new CampaignPackageValidationResult(staged, null, sourceVersion,
@@ -96,11 +75,5 @@ public class CampaignPackageValidationPipeline {
                     List.of(new CampaignImportProblem(ImportSeverity.ERROR, ImportProblemCodes.VALIDATION_ERROR, "",
                             "Campaign package validation failed", null)), List.of());
         }
-    }
-
-    private static CampaignPackageValidationResult unsupported(StagedCampaignPackage staged, int version) {
-        return new CampaignPackageValidationResult(staged, null, version, Map.of(),
-                List.of(new CampaignImportProblem(ImportSeverity.ERROR, ImportProblemCodes.UNSUPPORTED_FORMAT_VERSION, "",
-                        "No migration path exists for this format version", null)), List.of());
     }
 }
