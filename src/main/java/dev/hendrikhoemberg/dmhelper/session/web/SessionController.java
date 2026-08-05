@@ -2,9 +2,9 @@ package dev.hendrikhoemberg.dmhelper.session.web;
 
 import dev.hendrikhoemberg.dmhelper.adventure.service.AdventureService;
 import dev.hendrikhoemberg.dmhelper.adventure.service.SceneEncounterSeedService;
+import dev.hendrikhoemberg.dmhelper.session.layout.CockpitBuiltInPresetCatalog;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleDefinition;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleRegistry;
-import dev.hendrikhoemberg.dmhelper.session.service.CockpitLayoutPresetService;
 import dev.hendrikhoemberg.dmhelper.session.runtime.CockpitRuntimeModuleViewService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +28,7 @@ public class SessionController {
     private final SceneEncounterSeedService encounterSeeder;
     private final CockpitRuntimeModuleViewService moduleViews;
     private final CockpitModuleRegistry cockpitModules;
-    private final CockpitLayoutPresetService cockpitPresets;
+    private final CockpitBuiltInPresetCatalog cockpitPresets;
 
     @Value("${dmhelper.audio.test-provider:false}")
     private boolean testAudioProvider;
@@ -38,7 +38,7 @@ public class SessionController {
                              SceneEncounterSeedService encounterSeeder,
                              CockpitRuntimeModuleViewService moduleViews,
                              CockpitModuleRegistry cockpitModules,
-                             CockpitLayoutPresetService cockpitPresets) {
+                             CockpitBuiltInPresetCatalog cockpitPresets) {
         this.workspaces = workspaces;
         this.adventures = adventures;
         this.encounterSeeder = encounterSeeder;
@@ -77,7 +77,7 @@ public class SessionController {
         model.addAttribute("initialSessionPlanView", moduleViews.sessionPlan(campaignId));
         model.addAttribute("initialPartyView", moduleViews.party(campaignId));
         model.addAttribute("initialQuickNotesView", moduleViews.quickNotes(campaignId));
-        model.addAttribute("cockpitPresets", cockpitPresets.list());
+        model.addAttribute("cockpitPresets", cockpitPresets.all());
         model.addAttribute("cockpitDefaultPresetKey", "builtin:exploration");
         model.addAttribute("layoutEditing", true);
         addSeedEligibility(campaignId, workspace, model);

@@ -10,7 +10,6 @@ import dev.hendrikhoemberg.dmhelper.session.layout.CockpitBuiltInPresetCatalog;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleDefinition;
 import dev.hendrikhoemberg.dmhelper.session.layout.CockpitModuleRegistry;
 import dev.hendrikhoemberg.dmhelper.party.data.PartyMember;
-import dev.hendrikhoemberg.dmhelper.session.service.CockpitLayoutPresetService;
 import dev.hendrikhoemberg.dmhelper.session.runtime.CockpitRuntimeModuleViewService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService;
 import dev.hendrikhoemberg.dmhelper.session.service.SessionWorkspaceService.SessionWorkspace;
@@ -39,7 +38,7 @@ class SessionControllerTest {
     @MockitoBean private AdventureService adventures;
     @MockitoBean private SceneEncounterSeedService encounterSeeder;
     @MockitoBean private CockpitModuleRegistry cockpitModules;
-    @MockitoBean private CockpitLayoutPresetService cockpitPresets;
+    @MockitoBean private CockpitBuiltInPresetCatalog cockpitPresets;
 
     @MockitoBean
     private CampaignRepository campaignRepository;
@@ -58,11 +57,7 @@ class SessionControllerTest {
     void stubCockpitLayoutCatalog() {
         List<CockpitModuleDefinition> modules = standardRegistry.all();
         when(cockpitModules.all()).thenReturn(modules);
-        List<CockpitLayoutPresetService.PresetDto> presets = builtIns.all().stream()
-                .map(preset -> new CockpitLayoutPresetService.PresetDto(
-                        preset.key(), null, preset.name(), true, 0, preset.layout(), List.of()))
-                .toList();
-        when(cockpitPresets.list()).thenReturn(presets);
+        when(cockpitPresets.all()).thenReturn(builtIns.all());
     }
 
     @Test

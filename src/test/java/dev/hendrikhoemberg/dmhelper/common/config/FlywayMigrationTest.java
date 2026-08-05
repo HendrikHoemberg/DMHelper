@@ -469,12 +469,15 @@ class FlywayMigrationTest {
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '22' AND \"success\" = TRUE",
                 Integer.class)).isEqualTo(1);
+    }
+
+    @Test
+    void v30DropsApplicationLocalCockpitPresetStorage() {
+        assertThat(jdbc.queryForObject(
+                "SELECT COUNT(*) FROM \"flyway_schema_history\" WHERE \"version\" = '30' AND \"success\" = TRUE",
+                Integer.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject(
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = 'COCKPIT_LAYOUT_PRESET'",
-                Integer.class)).isEqualTo(1);
-        assertThat(jdbc.queryForObject("""
-                SELECT COUNT(*) FROM information_schema.columns
-                WHERE table_name = 'COCKPIT_LAYOUT_PRESET' AND column_name = 'CAMPAIGN_ID'
-                """, Integer.class)).isZero();
+                Integer.class)).isZero();
     }
 }
