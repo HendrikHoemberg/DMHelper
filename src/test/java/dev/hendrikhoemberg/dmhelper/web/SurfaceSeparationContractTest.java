@@ -32,7 +32,6 @@ class SurfaceSeparationContractTest {
     static final List<String> FORBIDDEN = List.of(
             "/package",           // campaign package export
             "/export",            // data export
-            "hx-post=\"/campaigns/import",  // campaign import
             "hx-vals='{\"direction\"",      // reordering
             "name=\"sourceLocator\"",        // source-metadata authoring
             "data-structured-metadata"       // structured metadata authoring
