@@ -10,9 +10,9 @@ opt-in behind a profile.
 | `./mvnw test` | JVM tier | 77s | 2,331 |
 | `./mvnw test -P gates` | everything | 193s | 2,574 |
 
-Both green as of the change that introduced this document. The full suite was 257s / 2,518
-before it; the extra test is net of two moved off the browser tier and one merged into it, so
-no assertion was dropped.
+Both green as of the change that introduced this document (2026-08-02). The full suite
+was 257s / 2,518 before it; the extra test is net of two moved off the browser tier and
+one merged into it, so no assertion was dropped at that time.
 
 **Updated 2026-08-04.** The appearance gates were consolidated into a single
 overflow gate (`gate/ViewportAccessibilityGateTest`); 14 style and render gates
@@ -22,10 +22,11 @@ intent — they are no longer machine-enforced.
 
 ## Why
 
-The 17 Playwright classes were **6% of the tests and 64% of the wall clock** — 257s full
-against 92s without. That cost is paid on every task in a multi-task plan, where the browser
+The 17 Playwright classes are 9% of the tests and 60% of the wall clock — 193s full
+against 77s without. That cost is paid on every task in a multi-task plan, where the browser
 gates almost never have anything to say about the template that just changed. Splitting the
-tiers makes the edit loop cheap without deleting a single assertion.
+tiers makes the edit loop cheap without deleting a single assertion (the 2026-08-04
+consolidation above is a separate, deliberate reduction).
 
 ## The rules
 
