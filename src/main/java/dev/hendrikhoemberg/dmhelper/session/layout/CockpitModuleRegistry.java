@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @org.springframework.stereotype.Component
 public final class CockpitModuleRegistry {
@@ -30,33 +29,23 @@ public final class CockpitModuleRegistry {
 
     private static List<CockpitModuleDefinition> standardDefinitions() {
         return List.of(
-                endpoint("story", "Story", 240, 220,
-                        Set.of(CockpitZone.PRIMARY, CockpitZone.LEFT_SUPPORT, CockpitZone.RIGHT_SUPPORT), true, true,
+                endpoint("story", "Story", 240, 220, CockpitZone.PRIMARY, true, true,
                         "Select a scene to begin."),
-                endpoint("map", "Map", 420, 300,
-                        Set.of(CockpitZone.PRIMARY), false, true,
+                endpoint("map", "Map", 420, 300, CockpitZone.PRIMARY, false, true,
                         "Choose or create a workspace map."),
-                endpoint("encounter", "Encounter", 280, 260,
-                        Set.of(CockpitZone.PRIMARY, CockpitZone.RIGHT_SUPPORT), true, true,
+                endpoint("encounter", "Encounter", 280, 260, CockpitZone.PRIMARY, true, true,
                         "Link or create an encounter for this scene."),
-                endpoint("session-plan", "Session plan", 220, 180,
-                        Set.of(CockpitZone.PRIMARY, CockpitZone.LEFT_SUPPORT), true, true,
+                endpoint("session-plan", "Session plan", 220, 180, CockpitZone.LEFT_SUPPORT, true, true,
                         "Create a session plan when the session starts."),
-                endpoint("party", "Party", 220, 140,
-                        Set.of(CockpitZone.LEFT_SUPPORT, CockpitZone.RIGHT_SUPPORT, CockpitZone.BOTTOM_UTILITY),
-                        true, true, "Add party members to this campaign."),
-                endpoint("quick-notes", "Quick notes", 220, 115,
-                        Set.of(CockpitZone.RIGHT_SUPPORT, CockpitZone.BOTTOM_UTILITY), true, true,
+                endpoint("party", "Party", 220, 140, CockpitZone.RIGHT_SUPPORT, true, true,
+                        "Add party members to this campaign."),
+                endpoint("quick-notes", "Quick notes", 220, 115, CockpitZone.BOTTOM_UTILITY, true, true,
                         "Capture a note from the command action."),
-                endpoint("reference", "Reference", 260, 220,
-                        Set.of(CockpitZone.PRIMARY, CockpitZone.LEFT_SUPPORT, CockpitZone.RIGHT_SUPPORT,
-                                CockpitZone.BOTTOM_UTILITY),
-                        true, true, "Search rules and compendium content."),
-                endpoint("audio", "Audio", 220, 112,
-                        Set.of(CockpitZone.LEFT_SUPPORT, CockpitZone.RIGHT_SUPPORT, CockpitZone.BOTTOM_UTILITY),
-                        true, true, "No audio cue is selected."),
-                endpoint("session-log", "Session log", 280, 180,
-                        Set.of(CockpitZone.PRIMARY, CockpitZone.BOTTOM_UTILITY), true, true,
+                endpoint("reference", "Reference", 260, 220, CockpitZone.BOTTOM_UTILITY, true, true,
+                        "Search rules and compendium content."),
+                endpoint("audio", "Audio", 220, 112, CockpitZone.BOTTOM_UTILITY, true, true,
+                        "No audio cue is selected."),
+                endpoint("session-log", "Session log", 280, 180, CockpitZone.BOTTOM_UTILITY, true, true,
                         "Session events will appear after play begins.")
         );
     }
@@ -77,12 +66,12 @@ public final class CockpitModuleRegistry {
 
     private static CockpitModuleDefinition endpoint(
             String key, String title, int minWidth, int minHeight,
-            Set<CockpitZone> zones, boolean compact, boolean focus,
+            CockpitZone zone, boolean compact, boolean focus,
             String empty) {
         return new CockpitModuleDefinition(key, title,
                 new CockpitModuleSource(CockpitModuleSource.Kind.ENDPOINT,
                         "/campaigns/{campaignId}/session/modules/" + key),
-                minWidth, minHeight, zones, compact, focus,
+                minWidth, minHeight, zone, compact, focus,
                 new CockpitModuleStateContract(empty, "Loading " + title + "…",
                         title + " could not refresh. Existing content was kept.", true));
     }

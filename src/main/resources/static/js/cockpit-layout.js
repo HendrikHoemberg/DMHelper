@@ -12,6 +12,23 @@
   };
   const DEFAULT_KEY = 'builtin:exploration';
   const API_BASE = '/api/v1/cockpit-layout';
+  /* Which modules a built-in renders compact was per-preset configuration that left the
+     Java model with the layout engine. Kept here so the retained compact behaviour is
+     unchanged until the layout script is trimmed. */
+  const PRESET_COMPACT_KEYS = {
+    'builtin:exploration': ['session-plan', 'party', 'audio', 'reference'],
+    'builtin:combat': ['story', 'party', 'quick-notes', 'reference', 'audio', 'session-log'],
+    'builtin:theatre-of-mind': ['party', 'reference', 'quick-notes', 'audio', 'session-log'],
+    'builtin:session-review': ['session-plan', 'quick-notes', 'party']
+  };
+  /* Per-preset column ratios, kept so the workbench renders as before until the
+     fixed CSS grid definitions (Task 13) own sizing. */
+  const PRESET_RATIOS = {
+    'builtin:exploration': { left: 0.18, primary: 0.64, right: 0.18, bottom: 0.16 },
+    'builtin:combat': { left: 0.18, primary: 0.52, right: 0.30, bottom: 0.16 },
+    'builtin:theatre-of-mind': { left: 0.19, primary: 0.50, right: 0.31, bottom: 0.16 },
+    'builtin:session-review': { left: 0.22, primary: 0.56, right: 0.22, bottom: 0.16 }
+  };
   const INVALID_STORAGE_MSG =
     'The saved device layout state was invalid and has been ignored.';
 
@@ -23,12 +40,8 @@
       this.config = config;
       this.campaignId = String(config.campaignId);
       this.modules = new Map(config.modules.map((module) => [module.key, module]));
-      this.presets = new Map(config.presets.map((preset) => [preset.key, this.clone(preset)]));
-      this.builtInCatalog = new Map(
-        config.presets
-          .filter((preset) => preset.builtIn)
-          .map((preset) => [preset.key, this.clone(preset)])
-      );
+      this.presets = new Map(config.presets.map((preset) => this.indexPreset(preset)));
+      this.builtInCatalog = new Map(config.presets.map((preset) => this.indexPreset(preset)));
       this.workbench = document.querySelector('[data-cockpit-workbench]');
       this.depot = document.querySelector('[data-cockpit-depot]');
       this.picker = document.getElementById('cockpitPresetPicker');
@@ -68,6 +81,37 @@
       return window.structuredClone
         ? window.structuredClone(value)
         : JSON.parse(JSON.stringify(value));
+    }
+
+    /**
+     * Index a preset for client use. Every preset is built-in now, so no builtIn
+     * flag survives; the layout document is derived from the module-to-zone
+     * assignment the server now sends.
+     */
+    indexPreset(preset) {
+      const clone = this.clone(preset);
+      clone.layout = this.buildPresetLayout(clone.moduleKeysByZone, clone.name, clone.key);
+      return [clone.key, clone];
+    }
+
+    buildPresetLayout(moduleKeysByZone, name, key) {
+      const zones = {};
+      for (const [zone, moduleKeys] of Object.entries(moduleKeysByZone || {})) {
+        zones[zone] = {
+          moduleKeys: moduleKeys.slice(),
+          activeModuleKey: moduleKeys.length ? moduleKeys[0] : null,
+          collapsed: zone === 'BOTTOM_UTILITY' && moduleKeys.length === 0
+        };
+      }
+      return {
+        schemaVersion: 1,
+        name: name || 'Preset',
+        zones,
+        ratios: PRESET_RATIOS[key]
+          ? { ...PRESET_RATIOS[key] }
+          : { left: 0.18, primary: 0.64, right: 0.18, bottom: 0.16 },
+        compactModuleKeys: PRESET_COMPACT_KEYS[key] || []
+      };
     }
 
     storageKey(kind) {
@@ -517,12 +561,9 @@
         return false;
       }
       const preset = this.presets.get(key);
-      if (!preset || !preset.layout) {
-        this.showNotice('That layout preset is unavailable. Exploration was used instead.');
-        key = DEFAULT_KEY;
-        const fallback = this.presets.get(key);
-        if (!fallback) return false;
-        return this.applyPreset(key, { skipDirtyCheck: true });
+      if (!preset || !preset.moduleKeysByZone) {
+        this.showNotice('That layout preset is unavailable.');
+        return false;
       }
 
       // Focus temporarily moves a live module shell outside its zone. Restore it
@@ -532,7 +573,7 @@
       }
 
       const started = performance.now();
-      this.current = this.clone(preset.layout);
+      this.current = this.buildPresetLayout(preset.moduleKeysByZone, preset.name, preset.key);
       this.overlayActiveTabs(this.current);
       this.currentPresetKey = key;
       // Respect each module's minimum width the moment a preset is applied, not only when
@@ -898,10 +939,18 @@
 
     allowedZonesFor(def) {
       if (!def) return [];
-      const raw = def.allowedZones;
-      if (Array.isArray(raw)) return raw.map(String);
-      if (raw && typeof raw === 'object') return Object.keys(raw);
-      return [];
+      // Modules no longer declare an allowed-zone set; the fixed presets are the source of
+      // truth. A module may occupy any zone it is assigned to in a built-in preset.
+      const zones = [];
+      for (const preset of this.presets.values()) {
+        const byZone = preset.moduleKeysByZone || {};
+        for (const zone of ZONES) {
+          if (byZone[zone] && byZone[zone].includes(def.key) && !zones.includes(zone)) {
+            zones.push(zone);
+          }
+        }
+      }
+      return zones;
     }
 
     findModuleZone(key) {

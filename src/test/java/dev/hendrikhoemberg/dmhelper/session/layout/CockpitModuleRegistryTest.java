@@ -3,7 +3,6 @@ package dev.hendrikhoemberg.dmhelper.session.layout;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -22,15 +21,16 @@ class CockpitModuleRegistryTest {
 
     @Test
     void mapIsPrimaryOnly() {
-        assertThat(registry.require("map").allowedZones())
-                .isEqualTo(Set.of(CockpitZone.PRIMARY));
+        assertThat(registry.require("map").zone())
+                .isEqualTo(CockpitZone.PRIMARY);
     }
 
     @Test
-    void everyModuleHasUsableStateCopyAndDimensions() {
+    void everyModuleHasUsableStateCopyDimensionsAndZone() {
         assertThat(registry.all()).allSatisfy(module -> {
             assertThat(module.minWidthPx()).isGreaterThanOrEqualTo(220);
             assertThat(module.minHeightPx()).isGreaterThanOrEqualTo(112);
+            assertThat(module.zone()).isNotNull();
             assertThat(module.states().emptyMessage()).isNotBlank();
             assertThat(module.states().loadingMessage()).isNotBlank();
             assertThat(module.states().errorMessage()).isNotBlank();

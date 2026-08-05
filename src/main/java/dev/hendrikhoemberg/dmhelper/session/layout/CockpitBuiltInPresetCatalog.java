@@ -2,31 +2,30 @@ package dev.hendrikhoemberg.dmhelper.session.layout;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @org.springframework.stereotype.Component
 public final class CockpitBuiltInPresetCatalog {
     private static final List<BuiltInPreset> PRESETS = List.of(
-            preset("builtin:exploration", "Exploration",
-                    new CockpitLayoutDocument.SplitRatios(0.18, 0.64, 0.18, 0.16),
-                    zone("story"), zone("session-plan"), zone("party"),
-                    zone("quick-notes", "audio", "reference"),
-                    Set.of("session-plan", "party", "audio", "reference")),
-            preset("builtin:combat", "Combat",
-                    new CockpitLayoutDocument.SplitRatios(0.18, 0.52, 0.30, 0.16),
-                    zone("map"), zone("story", "party"), zone("encounter"),
-                    zone("quick-notes", "reference", "audio", "session-log"),
-                    Set.of("story", "party", "quick-notes", "reference", "audio", "session-log")),
-            preset("builtin:theatre-of-mind", "Theatre of Mind",
-                    new CockpitLayoutDocument.SplitRatios(0.19, 0.50, 0.31, 0.16),
-                    zone("encounter"), zone("party", "reference"), zone("story"),
-                    zone("quick-notes", "audio", "session-log"),
-                    Set.of("party", "reference", "quick-notes", "audio", "session-log")),
-            preset("builtin:session-review", "Session Review",
-                    new CockpitLayoutDocument.SplitRatios(0.22, 0.56, 0.22, 0.16),
-                    zone("session-log"), zone("session-plan"), zone("quick-notes", "party"),
-                    collapsedZone(),
-                    Set.of("session-plan", "quick-notes", "party"))
+            new BuiltInPreset("builtin:exploration", "Exploration", Map.of(
+                    CockpitZone.PRIMARY, List.of("story"),
+                    CockpitZone.LEFT_SUPPORT, List.of("session-plan"),
+                    CockpitZone.RIGHT_SUPPORT, List.of("party"),
+                    CockpitZone.BOTTOM_UTILITY, List.of("quick-notes", "audio", "reference"))),
+            new BuiltInPreset("builtin:combat", "Combat", Map.of(
+                    CockpitZone.PRIMARY, List.of("map"),
+                    CockpitZone.LEFT_SUPPORT, List.of("story", "party"),
+                    CockpitZone.RIGHT_SUPPORT, List.of("encounter"),
+                    CockpitZone.BOTTOM_UTILITY, List.of("quick-notes", "reference", "audio", "session-log"))),
+            new BuiltInPreset("builtin:theatre-of-mind", "Theatre of Mind", Map.of(
+                    CockpitZone.PRIMARY, List.of("encounter"),
+                    CockpitZone.LEFT_SUPPORT, List.of("party", "reference"),
+                    CockpitZone.RIGHT_SUPPORT, List.of("story"),
+                    CockpitZone.BOTTOM_UTILITY, List.of("quick-notes", "audio", "session-log"))),
+            new BuiltInPreset("builtin:session-review", "Session Review", Map.of(
+                    CockpitZone.PRIMARY, List.of("session-log"),
+                    CockpitZone.LEFT_SUPPORT, List.of("session-plan"),
+                    CockpitZone.RIGHT_SUPPORT, List.of("quick-notes", "party"),
+                    CockpitZone.BOTTOM_UTILITY, List.of()))
     );
 
     public List<BuiltInPreset> all() {
@@ -41,40 +40,8 @@ public final class CockpitBuiltInPresetCatalog {
                         "Unknown built-in cockpit preset: " + key));
     }
 
-    private static BuiltInPreset preset(
+    public record BuiltInPreset(
             String key,
             String name,
-            CockpitLayoutDocument.SplitRatios ratios,
-            CockpitLayoutDocument.ZoneLayout primary,
-            CockpitLayoutDocument.ZoneLayout left,
-            CockpitLayoutDocument.ZoneLayout right,
-            CockpitLayoutDocument.ZoneLayout bottom,
-            Set<String> compactModuleKeys) {
-        CockpitLayoutDocument layout = new CockpitLayoutDocument(
-                CockpitLayoutDocument.CURRENT_SCHEMA_VERSION,
-                name,
-                Map.of(
-                        CockpitZone.PRIMARY, primary,
-                        CockpitZone.LEFT_SUPPORT, left,
-                        CockpitZone.RIGHT_SUPPORT, right,
-                        CockpitZone.BOTTOM_UTILITY, bottom),
-                ratios,
-                compactModuleKeys);
-        return new BuiltInPreset(key, name, layout);
-    }
-
-    private static CockpitLayoutDocument.ZoneLayout zone(String... keys) {
-        List<String> moduleKeys = List.of(keys);
-        return new CockpitLayoutDocument.ZoneLayout(
-                moduleKeys, moduleKeys.isEmpty() ? null : moduleKeys.getFirst(), false);
-    }
-
-    private static CockpitLayoutDocument.ZoneLayout collapsedZone(String... keys) {
-        List<String> moduleKeys = List.of(keys);
-        return new CockpitLayoutDocument.ZoneLayout(
-                moduleKeys, moduleKeys.isEmpty() ? null : moduleKeys.getFirst(), true);
-    }
-
-    public record BuiltInPreset(String key, String name, CockpitLayoutDocument layout) {
-    }
+            Map<CockpitZone, List<String>> moduleKeysByZone) {}
 }
