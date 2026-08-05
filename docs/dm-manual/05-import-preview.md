@@ -27,4 +27,4 @@ Errors and warnings map to codes in the [Validation Error Catalog](../authoring/
 
 ## Additive Import
 
-Import is additive — existing data is merged, not replaced. Package version 2 supports migrations from version 1. Use the endpoint `GET /campaigns/package-imports/previews` to initiate.
+Import is additive — existing data is merged, not replaced. Use the endpoint `GET /campaigns/package-imports/previews` to initiate.

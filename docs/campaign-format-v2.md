@@ -6,7 +6,8 @@ Two canonical container formats:
 - **`.dmcampaign` ZIP** — for asset-bearing packages. Root contains `manifest.json` and `assets/`.
 - **`.dmcampaign.json`** — for asset-free packages. Single JSON file.
 
-Legacy `.dmcampaign.json` (v1) is accepted for backward compatibility and migrated to v2.
+Format v1 is not accepted. A `.dmcampaign.json` declaring `formatVersion: 1`
+is rejected with `UNSUPPORTED_FORMAT_VERSION`.
 
 ## Safety Limits
 
@@ -310,7 +311,6 @@ between the two fails the build.
 ```text
 container safety
   → source schema/semantic validation
-  → compatibility migration (v1→v2)
   → v2 schema/deserialization
   → key/reference uniqueness
   → typed catalog resolution
@@ -342,17 +342,6 @@ malformed container requests return `application/problem+json` with a stable `co
 
 **`GET /campaigns/{campaignId}/package`** — canonical v2 export (JSON for asset-free, ZIP for assets).
 Supports `includeCombatLog` and `includeDiceHistory` query params (both default `true`).
-
-**`GET /campaigns/{campaignId}/export`** — legacy v1 JSON export.
-
-## V1 Migration
-
-Legacy v1 packages are migrated with:
-- Deterministic package key generation
-- Reference rewriting (name-based to key-based)
-- Embedded image extraction to package assets
-- Warning `LEGACY_REFERENCE_MIGRATED` per migrated reference
-- Label `MIGRATED_FROM_V1`
 
 ## Campaign Settings
 
@@ -448,7 +437,7 @@ Structured scenes introduce typed fields backed by string-valued enums:
 
 ## Structured Scene DTO Fields
 
-Each `SceneDto` in the manifest carries the following fields beyond the v1 scene contract:
+Each `SceneDto` in the manifest carries the following fields beyond the base scene contract:
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -1013,9 +1002,9 @@ campaign scenes, combatants, and map pins. User-global custom library dependenci
 threats are seeded into library export (order 200). Catalog SRD refs remain catalog refs. Transient
 editor/roller open state is not exported.
 
-### V1 Compatibility
+### Legacy Scene Compatibility
 
-Legacy v1 scenes (created before the item-6 structured scene migration) receive `null` or empty values for all new item-6 fields:
+Scenes created before the item-6 structured scene migration receive `null` or empty values for all new item-6 fields:
 
 | Field | Legacy Value |
 |-------|-------------|

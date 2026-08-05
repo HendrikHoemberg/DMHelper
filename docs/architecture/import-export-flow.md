@@ -9,9 +9,8 @@ The V2 campaign import (coordinated by `CampaignImportCoordinator`) proceeds thr
 3. **Semantic** — `CampaignManifestV2SemanticValidator` checks referential integrity and business rules.
 4. **Catalog** — Verify catalog references (SRD keys) against `CampaignCatalogService.snapshot()`.
 5. **Spatial/Assets** — Validate asset signatures via `AssetSignatureValidator`; check tokens and primitives within map bounds.
-6. **Migrate** — `LegacyV1ToV2Migration` handles format upgrade from V1 manifests; `FormatMigrationRegistry` runs schema-version migrations.
-7. **Preview** — Results stored in `CampaignImportPreviewStore`; returned as `CampaignImportPreview` with problem list (ERROR/WARNING).
-8. **Atomic Persist** — `confirm()` iterates registry importers in order, `entityManager.flush()`, then discards preview.
+6. **Preview** — Results stored in `CampaignImportPreviewStore`; returned as `CampaignImportPreview` with problem list (ERROR/WARNING).
+7. **Atomic Persist** — `confirm()` iterates registry importers in order, `entityManager.flush()`, then discards preview.
 
 ## Export Adapter Order
 
