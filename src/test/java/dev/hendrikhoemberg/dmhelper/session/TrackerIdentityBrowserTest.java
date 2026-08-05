@@ -305,15 +305,18 @@ class TrackerIdentityBrowserTest {
     }
 
     @Test
-    void anInertSplitterExplainsItself() {
+    void theSplitterStaysInertWithoutAnEditMode() {
         openCombat();
         var splitter = page.locator("[data-cockpit-splitter='PRIMARY_RIGHT']");
-        assertThat(splitter.getAttribute("aria-disabled")).isEqualTo("true");
-        assertThat(splitter.getAttribute("title")).contains("Edit layout");
+        assertThat(splitter.getAttribute("tabindex")).isEqualTo("-1");
+        String before = (String) page.evaluate(
+                "() => getComputedStyle(document.querySelector('[data-cockpit-workbench]'))"
+                        + ".getPropertyValue('--primary-size')");
         splitter.dispatchEvent("pointerdown");
-        page.waitForFunction(
-                "() => document.getElementById('cockpitLayoutNotice')?.textContent.trim().length > 0");
-        assertThat(page.locator("#cockpitLayoutNotice").innerText()).containsIgnoringCase("edit layout");
+        String after = (String) page.evaluate(
+                "() => getComputedStyle(document.querySelector('[data-cockpit-workbench]'))"
+                        + ".getPropertyValue('--primary-size')");
+        assertThat(after).as("an inert splitter must not resize the workbench").isEqualTo(before);
     }
 
     // ── Task 9 ──────────────────────────────────────────────────────────────────

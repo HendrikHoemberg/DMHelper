@@ -9,6 +9,7 @@
 
 <section class="cockpit-workbench"
          data-cockpit-workbench
+         data-cockpit-preset="builtin:exploration"
          data-layout-mode="locked"
          data-bottom-collapsed="false"
          aria-label="Session workspace">
@@ -24,6 +25,10 @@
               aria-controls="cockpitPanel-LEFT_SUPPORT-session-plan"
               aria-selected="true"
               data-module-tab="session-plan">Session plan</button>
+      <button type="button" class="btn btn-ghost cockpit-zone__collapse"
+              data-zone-collapse aria-expanded="true">
+        <span class="sr-only">Collapse zone</span>
+      </button>
     </div>
     <div class="cockpit-zone__panels" data-zone-panels>
       <div class="cockpit-zone__panel" role="tabpanel"
@@ -53,6 +58,10 @@
               aria-controls="cockpitPanel-PRIMARY-story"
               aria-selected="true"
               data-module-tab="story">Story</button>
+      <button type="button" class="btn btn-ghost cockpit-zone__collapse"
+              data-zone-collapse aria-expanded="true">
+        <span class="sr-only">Collapse zone</span>
+      </button>
     </div>
     <div class="cockpit-zone__panels" data-zone-panels>
       <div class="cockpit-zone__panel" role="tabpanel"
@@ -82,6 +91,10 @@
               aria-controls="cockpitPanel-RIGHT_SUPPORT-party"
               aria-selected="true"
               data-module-tab="party">Party</button>
+      <button type="button" class="btn btn-ghost cockpit-zone__collapse"
+              data-zone-collapse aria-expanded="true">
+        <span class="sr-only">Collapse zone</span>
+      </button>
     </div>
     <div class="cockpit-zone__panels" data-zone-panels>
       <div class="cockpit-zone__panel" role="tabpanel"
@@ -123,6 +136,10 @@
               aria-selected="false"
               data-module-tab="reference"
               tabindex="-1">Reference</button>
+      <button type="button" class="btn btn-ghost cockpit-zone__collapse"
+              data-zone-collapse aria-expanded="true">
+        <span class="sr-only">Collapse zone</span>
+      </button>
     </div>
     <div class="cockpit-zone__panels" data-zone-panels>
       <div class="cockpit-zone__panel" role="tabpanel"

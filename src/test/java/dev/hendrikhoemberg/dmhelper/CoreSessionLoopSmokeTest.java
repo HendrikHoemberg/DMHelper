@@ -1811,43 +1811,6 @@ class CoreSessionLoopSmokeTest {
                 .allSatisfy(splitter -> assertThat(splitter.getAttribute("tabindex")).isEqualTo("-1"));
         assertThat(dmPage.locator("[data-layout-edit-only]:visible").count()).isZero();
 
-        // Locked mode rejects layout mutations (controller throws / no-ops; layout unchanged).
-        Object lockedReject = dmPage.evaluate("""
-            () => {
-              const c = window.cockpitLayout;
-              const before = JSON.stringify(c.current);
-              const results = {};
-              try {
-                c.moveModule('party', 'RIGHT_SUPPORT');
-                results.move = 'accepted';
-              } catch (e) {
-                results.move = 'threw';
-              }
-              try {
-                c.removeModule('party');
-                results.remove = 'accepted';
-              } catch (e) {
-                results.remove = 'threw';
-              }
-              results.resize = c.resize('LEFT_PRIMARY', 0.05) === false ? 'noop' : 'accepted';
-              const after = JSON.stringify(c.current);
-              return {
-                move: results.move,
-                remove: results.remove,
-                resize: results.resize,
-                unchanged: before === after,
-                mode: c.workbench.dataset.layoutMode
-              };
-            }
-            """);
-        @SuppressWarnings("unchecked")
-        var lockedMap = (java.util.Map<String, Object>) lockedReject;
-        assertThat(lockedMap.get("mode")).isEqualTo("locked");
-        assertThat(lockedMap.get("unchanged")).as("locked layout snapshot unchanged").isEqualTo(true);
-        assertThat(lockedMap.get("move")).isEqualTo("threw");
-        assertThat(lockedMap.get("remove")).isEqualTo("threw");
-        assertThat(lockedMap.get("resize")).isEqualTo("noop");
-
         String beforeSceneChange = dmPage.locator("#cockpitPresetPicker").inputValue();
         if (dmPage.locator("[data-current-scene]").count() > 0) {
             dmPage.evaluate(
@@ -1873,83 +1836,23 @@ class CoreSessionLoopSmokeTest {
         assertThat(dmPage.locator("[data-module-key='story']")
                 .evaluate("el => el.isConnected")).isEqualTo(true);
 
-        // Exploration's bottom utility is now expanded; session-review keeps a
-        // collapsed empty bottom, so a collapsed utility zone remains recoverable
-        // with one explicit edit-mode action there.
+        // Per-zone collapse is a uniform client-side affordance; a collapsed zone recovers
+        // through its collapse button once the panels-only collapse rule lands (Task 13).
         selectCockpitPreset("builtin:session-review");
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitLayoutModeButton").click();
-        Locator bottomToggle = dmPage.locator("[data-bottom-utility-toggle]");
-        assertThat(bottomToggle.isVisible()).isTrue();
-        assertThat(bottomToggle.getAttribute("aria-expanded")).isEqualTo("false");
-        bottomToggle.click();
-        assertThat(dmPage.locator("[data-cockpit-zone='BOTTOM_UTILITY']")
-                .getAttribute("data-collapsed")).isEqualTo("false");
-        assertThat(bottomToggle.getAttribute("aria-expanded")).isEqualTo("true");
-        bottomToggle.click();
+        Locator bottomCollapse = dmPage.locator("[data-cockpit-zone='BOTTOM_UTILITY'] [data-zone-collapse]");
+        assertThat(bottomCollapse.isVisible()).isTrue();
+        bottomCollapse.click();
         assertThat(dmPage.locator("[data-cockpit-zone='BOTTOM_UTILITY']")
                 .getAttribute("data-collapsed")).isEqualTo("true");
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitLayoutModeButton").click();
-        if (dmPage.locator("#cockpitLayoutExitDialog").isVisible()) {
-            dmPage.locator("[data-layout-exit='discard']").click();
-        }
+        dmPage.evaluate("() => window.cockpitLayout.setZoneCollapsed('BOTTOM_UTILITY', false)");
+        assertThat(dmPage.locator("[data-cockpit-zone='BOTTOM_UTILITY']")
+                .getAttribute("data-collapsed")).isEqualTo("false");
         selectCockpitPreset("builtin:combat");
 
-        // Resume draft: dirty baseline is the named preset, not the draft itself.
-        Object resumeDirty = dmPage.evaluate("""
-            () => {
-              const c = window.cockpitLayout;
-              const presetKey = c.currentPresetKey;
-              const named = c.presets.get(presetKey);
-              const draftLayout = c.clone(named.layout);
-              draftLayout.ratios = Object.assign({}, draftLayout.ratios, {
-                left: 0.12, primary: 0.64, right: 0.24
-              });
-              c.resumeDraft({ presetKey, layout: draftLayout });
-              const dirty = c.isDirty();
-              const arrangeHidden = !!document.getElementById('cockpitModuleArrangeMenu')?.hidden;
-              c.discardEdit();
-              c.clearStorage('edit-draft');
-              return { dirty, arrangeHidden, mode: c.workbench.dataset.layoutMode };
-            }
-            """);
-        @SuppressWarnings("unchecked")
-        var resumeMap = (java.util.Map<String, Object>) resumeDirty;
-        assertThat(resumeMap.get("dirty")).as("resume vs named preset is dirty").isEqualTo(true);
-        assertThat(resumeMap.get("arrangeHidden")).as("arrange menu stays closed in edit").isEqualTo(true);
-        assertThat(resumeMap.get("mode")).isEqualTo("locked");
-
-        // Readable but semantically invalid browser drafts are rejected, not resumed.
-        @SuppressWarnings("unchecked")
-        var invalidDraft = (java.util.Map<String, Object>) dmPage.evaluate("""
-            () => {
-              const c = window.cockpitLayout;
-              c._draftPromptShown = false;
-              const invalid = c.clone(c.current);
-              invalid.zones.PRIMARY.moduleKeys = ['missing-module'];
-              invalid.zones.PRIMARY.activeModuleKey = 'missing-module';
-              localStorage.setItem(c.storageKey('edit-draft'), JSON.stringify({
-                presetKey: c.currentPresetKey,
-                layout: invalid
-              }));
-              c.maybeOfferDraftRecovery();
-              const notice = document.getElementById('cockpitLayoutNotice');
-              return {
-                retained: !!localStorage.getItem(c.storageKey('edit-draft')),
-                offeredResume: !!notice?.querySelector('button'),
-                explained: (notice?.textContent || '').includes('invalid')
-              };
-            }
-            """);
-        assertThat(invalidDraft.get("retained")).isEqualTo(false);
-        assertThat(invalidDraft.get("offeredResume")).isEqualTo(false);
-        assertThat(invalidDraft.get("explained")).isEqualTo(true);
-
-        // An obsolete last-preset key falls back visibly instead of failing silently.
+        // An obsolete stored preset key falls back visibly instead of failing silently.
         dmPage.evaluate("""
             () => localStorage.setItem(
-              window.cockpitLayout.storageKey('last-preset'),
+              window.cockpitLayout.storageKey('preset'),
               'custom:missing-preset'
             )
             """);
@@ -1961,191 +1864,6 @@ class CoreSessionLoopSmokeTest {
         assertThat(dmPage.locator("#cockpitLayoutNotice").textContent()).contains("invalid");
     }
 
-    @Test
-    @Order(35)
-    void cockpitLayoutEditSupportsDockingSplittersFocusAndAddRemove() {
-        if (campaignId == null) {
-            createCampaign();
-        }
-        dmPage.setViewportSize(1366, 768);
-        dmPage.navigate("http://localhost:" + port + "/campaigns/" + campaignId + "/session");
-        dmPage.waitForLoadState(LoadState.NETWORKIDLE);
-        dmPage.waitForFunction("window.cockpitLayout?.mounted === true");
-        // Combat has Encounter on Right, Party on Left, open Bottom (three usable splitters).
-        selectCockpitPreset("builtin:combat");
-        dmPage.waitForFunction("document.querySelector('[data-cockpit-zone=\"RIGHT_SUPPORT\"] [data-module-key=\"encounter\"]')");
-
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitLayoutModeButton").click();
-        assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
-                .isEqualTo("edit");
-        assertThat(dmPage.locator("[data-cockpit-splitter]").all())
-                .allSatisfy(splitter -> assertThat(splitter.getAttribute("tabindex")).isEqualTo("0"));
-
-        Locator leftSplitter = dmPage.locator("[data-cockpit-splitter='LEFT_PRIMARY']");
-        double baseValue = Double.parseDouble(leftSplitter.getAttribute("aria-valuenow"));
-        leftSplitter.focus();
-        dmPage.keyboard().press("ArrowRight");
-        double afterSmall = Double.parseDouble(leftSplitter.getAttribute("aria-valuenow"));
-        assertThat(afterSmall - baseValue)
-                .as("ArrowRight grows left by ~2pp or hits clamp")
-                .isIn(0.0, 2.0);
-        if (afterSmall > baseValue) {
-            dmPage.keyboard().press("Shift+ArrowRight");
-            double afterShift = Double.parseDouble(leftSplitter.getAttribute("aria-valuenow"));
-            assertThat(afterShift - afterSmall)
-                    .as("Shift+ArrowRight grows left by ~10pp or hits clamp")
-                    .isBetween(0.0, 10.0);
-            if (afterShift < afterSmall + 9.5) {
-                // Clamp hit — value must remain within aria min/max.
-                double min = Double.parseDouble(leftSplitter.getAttribute("aria-valuemin"));
-                double max = Double.parseDouble(leftSplitter.getAttribute("aria-valuemax"));
-                assertThat(afterShift).isBetween(min, max);
-            } else {
-                assertThat(afterShift - afterSmall).isEqualTo(10.0);
-            }
-        }
-
-        // Arrange: move Encounter from Right → Primary.
-        clickModuleChrome("encounter", "menu");
-        dmPage.locator("#cockpitModuleArrangeMenu [data-arrange-zone='PRIMARY']").click();
-        assertThat(dmPage.locator("[data-module-key='encounter']").count()).isEqualTo(1);
-        assertThat(dmPage.locator("[data-cockpit-zone='PRIMARY'] [data-module-key='encounter']").count())
-                .isEqualTo(1);
-        assertThat(dmPage.locator("[data-cockpit-zone='PRIMARY'] [data-module-tab='encounter']").count())
-                .isEqualTo(1);
-
-        // Reorder Encounter earlier / later among Primary tabs.
-        clickModuleChrome("encounter", "menu");
-        dmPage.locator("#cockpitModuleArrangeMenu [data-arrange-move='earlier']").click();
-        List<String> earlierOrder = dmPage.locator("[data-cockpit-zone='PRIMARY'] [data-module-tab]")
-                .all().stream().map(l -> l.getAttribute("data-module-tab")).toList();
-        assertThat(earlierOrder.getFirst()).isEqualTo("encounter");
-
-        clickModuleChrome("encounter", "menu");
-        dmPage.locator("#cockpitModuleArrangeMenu [data-arrange-move='later']").click();
-        List<String> laterOrder = dmPage.locator("[data-cockpit-zone='PRIMARY'] [data-module-tab]")
-                .all().stream().map(l -> l.getAttribute("data-module-tab")).toList();
-        assertThat(laterOrder.indexOf("encounter")).isGreaterThan(0);
-
-        // Remove Audio → depot + Add module list.
-        // Combat bottom defaults to Quick notes active; select Audio first so chrome is live.
-        dmPage.evaluate("window.cockpitLayout.selectTab('BOTTOM_UTILITY', 'audio')");
-        clickModuleChrome("audio", "remove");
-        assertThat(dmPage.locator("[data-cockpit-depot] [data-module-key='audio']").count()).isEqualTo(1);
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitAddModuleButton").click();
-        // One entry per allowed zone (Left / Right / Bottom for Audio).
-        assertThat(dmPage.locator("#cockpitAddModuleDialog [data-add-module='audio']").count())
-                .isGreaterThanOrEqualTo(1);
-        assertThat(dmPage.locator(
-                "#cockpitAddModuleDialog [data-add-module='audio'][data-add-zone='BOTTOM_UTILITY']").count())
-                .isEqualTo(1);
-
-        // Add Audio back to Bottom.
-        dmPage.locator("#cockpitAddModuleDialog [data-add-module='audio'][data-add-zone='BOTTOM_UTILITY']")
-                .click();
-        assertThat(dmPage.locator("[data-module-key='audio']").count()).isEqualTo(1);
-        assertThat(dmPage.locator("[data-cockpit-zone='BOTTOM_UTILITY'] [data-module-key='audio']").count())
-                .isEqualTo(1);
-        assertThat(dmPage.locator("#cockpitAddModuleDialog").isVisible()).isFalse();
-
-        // Pointer docking: Party (Left) → Right docking target.
-        Object docked = dmPage.evaluate("""
-            () => {
-              const key = 'party';
-              const header = document.querySelector('[data-module-key="party"] .cockpit-module__header');
-              const target = document.querySelector(
-                '[data-cockpit-zone="RIGHT_SUPPORT"][data-dock-target], [data-cockpit-zone="RIGHT_SUPPORT"] [data-dock-target]'
-              ) || document.querySelector('[data-cockpit-zone="RIGHT_SUPPORT"]');
-              if (!header || !target) return { ok: false, reason: 'missing-nodes' };
-              const dt = new DataTransfer();
-              dt.setData('text/x-dmhelper-module', key);
-              header.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt }));
-              target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
-              target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
-              const onRight = !!document.querySelector(
-                '[data-cockpit-zone="RIGHT_SUPPORT"] [data-module-key="party"]'
-              );
-              return { ok: onRight, shells: document.querySelectorAll('[data-module-key="party"]').length };
-            }
-            """);
-        @SuppressWarnings("unchecked")
-        var dockMap = (java.util.Map<String, Object>) docked;
-        assertThat(dockMap.get("ok")).as("party docks to right").isEqualTo(true);
-        assertThat(((Number) dockMap.get("shells")).intValue()).isEqualTo(1);
-
-        // Focus Story → Return restores focus to Story Focus button.
-        clickModuleChrome("story", "focus");
-        assertThat(dmPage.locator("#cockpitFocusLayer").isVisible()).isTrue();
-        assertThat(dmPage.locator("[data-cockpit-focus-layer] [data-module-key='story']").count())
-                .isEqualTo(1);
-        Object focusState = dmPage.evaluate("""
-            () => {
-              const wb = document.querySelector('[data-cockpit-workbench]');
-              return {
-                inert: wb.hasAttribute('inert') || wb.inert === true,
-                focused: window.cockpitLayout.focusedModuleKey
-              };
-            }
-            """);
-        @SuppressWarnings("unchecked")
-        var focusMap = (java.util.Map<String, Object>) focusState;
-        assertThat(focusMap.get("inert")).isEqualTo(true);
-        assertThat(focusMap.get("focused")).isEqualTo("story");
-
-        dmPage.locator("#cockpitFocusReturn").click();
-        assertThat(dmPage.locator("#cockpitFocusLayer").isHidden()).isTrue();
-        assertThat(dmPage.locator("[data-module-key='story'] [data-module-focus]")
-                .evaluate("el => document.activeElement === el")).isEqualTo(true);
-
-        // Focus + layout mutation: controller restores focus before muting placement.
-        clickModuleChrome("story", "focus");
-        assertThat(dmPage.locator("#cockpitFocusLayer").isVisible()).isTrue();
-        Object focusThenMutate = dmPage.evaluate("""
-            () => {
-              const c = window.cockpitLayout;
-              const chromeHidden = !!document.querySelector(
-                '[data-cockpit-focus-layer] [data-module-key="story"] [data-module-remove]'
-              )?.hidden;
-              const ok = c.moveModule('story', 'LEFT_SUPPORT');
-              return {
-                ok,
-                focusedAfter: c.focusedModuleKey,
-                layerHidden: document.getElementById('cockpitFocusLayer')?.hidden === true,
-                chromeHidden,
-                onLeft: !!document.querySelector(
-                  '[data-cockpit-zone="LEFT_SUPPORT"] [data-module-key="story"]'
-                ),
-                shells: document.querySelectorAll('[data-module-key="story"]').length
-              };
-            }
-            """);
-        @SuppressWarnings("unchecked")
-        var focusMutateMap = (java.util.Map<String, Object>) focusThenMutate;
-        assertThat(focusMutateMap.get("chromeHidden")).as("edit chrome hidden while focused")
-                .isEqualTo(true);
-        assertThat(focusMutateMap.get("ok")).isEqualTo(true);
-        assertThat(focusMutateMap.get("focusedAfter")).isNull();
-        assertThat(focusMutateMap.get("layerHidden")).isEqualTo(true);
-        assertThat(focusMutateMap.get("onLeft")).isEqualTo(true);
-        assertThat(((Number) focusMutateMap.get("shells")).intValue()).isEqualTo(1);
-
-        // Exit once → Discard restores original combat preset placement.
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitLayoutModeButton").click();
-        dmPage.locator("[data-layout-exit='discard']").click();
-        assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
-                .isEqualTo("locked");
-        assertThat(dmPage.locator("[data-cockpit-zone='RIGHT_SUPPORT'] [data-module-key='encounter']").count())
-                .isEqualTo(1);
-        assertThat(dmPage.locator("[data-cockpit-zone='LEFT_SUPPORT'] [data-module-key='party']").count())
-                .isEqualTo(1);
-        assertThat(dmPage.locator("[data-cockpit-zone='BOTTOM_UTILITY'] [data-module-key='audio']").count())
-                .isEqualTo(1);
-        assertThat(dmPage.locator("[data-cockpit-zone='PRIMARY'] [data-module-key='map']").count())
-                .isEqualTo(1);
-    }
 
     @Test
     @Order(36)
@@ -2501,51 +2219,6 @@ class CoreSessionLoopSmokeTest {
         assertThat(((Number) transform.get("x")).doubleValue()).isEqualTo(-88.0);
         assertThat(((Number) transform.get("y")).doubleValue()).isEqualTo(-55.0);
 
-        // Failed preset save keeps edit mode, draft, correlation; no success path.
-        final String correlationId = "layout-save-503-test";
-        failOnce(dmPage, "**/api/v1/cockpit-layout/presets", "POST",
-                Pattern.compile(".*/api/v1/cockpit-layout/presets"), correlationId);
-        @SuppressWarnings("unchecked")
-        var saveFail = (java.util.Map<String, Object>) dmPage.evaluate("""
-                async () => {
-                  const c = window.cockpitLayout;
-                  c.enterEditMode();
-                  c.current.ratios = Object.assign({}, c.current.ratios, { left: 0.18 });
-                  c.persistDraft();
-                  const originalPrompt = c.promptName.bind(c);
-                  c.promptName = async () => 'Save Fail Copy';
-                  try {
-                    await c.saveEdit();
-                  } finally {
-                    c.promptName = originalPrompt;
-                  }
-                  const notice = document.getElementById('cockpitLayoutNotice')?.textContent || '';
-                  return {
-                    mode: c.workbench.dataset.layoutMode,
-                    draftExists: !!localStorage.getItem(c.storageKey('edit-draft')),
-                    notice,
-                    hasReference: notice.includes('Reference:')
-                      || notice.includes('layout-save-503-test'),
-                    hasSuccess: /saved|success/i.test(notice)
-                  };
-                }
-                """);
-        assertThat(saveFail.get("mode")).as("edit mode remains after failed save").isEqualTo("edit");
-        assertThat(saveFail.get("draftExists")).as("edit draft retained after 503").isEqualTo(true);
-        assertThat(saveFail.get("hasReference")).as("notice includes correlation reference").isEqualTo(true);
-        assertThat(saveFail.get("hasSuccess")).as("no success message on failed save").isEqualTo(false);
-
-        // Cleanup edit mode without leaving a dirty dialog for later tests.
-        dmPage.evaluate("""
-                () => {
-                  const c = window.cockpitLayout;
-                  if (c.workbench.dataset.layoutMode === 'edit') {
-                    c.discardEdit();
-                  }
-                  c.clearStorage('edit-draft');
-                  c.clearNotice();
-                }
-                """);
     }
 
     @Test
@@ -2768,20 +2441,6 @@ class CoreSessionLoopSmokeTest {
                 }
                 """)).as("Retry button is keyboard reachable").isEqualTo(true);
 
-        // Separators report updated aria-valuenow in edit mode.
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitLayoutModeButton").click();
-        assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
-                .isEqualTo("edit");
-        Locator leftSplitter = dmPage.locator("[data-cockpit-splitter='LEFT_PRIMARY']");
-        double beforeSplit = Double.parseDouble(leftSplitter.getAttribute("aria-valuenow"));
-        leftSplitter.focus();
-        dmPage.keyboard().press("ArrowRight");
-        double afterSplit = Double.parseDouble(leftSplitter.getAttribute("aria-valuenow"));
-        assertThat(afterSplit)
-                .as("aria-valuenow updates (or clamps) after arrow resize")
-                .isGreaterThanOrEqualTo(beforeSplit);
-
         // Escape closes focus layer and restores its trigger (Focus control).
         dmPage.evaluate("window.cockpitLayout.selectTab('LEFT_SUPPORT', 'story')");
         clickModuleChrome("story", "focus");
@@ -2792,38 +2451,6 @@ class CoreSessionLoopSmokeTest {
                 .evaluate("el => document.activeElement === el"))
                 .as("Escape restores focus to the Focus control")
                 .isEqualTo(true);
-
-        // Add dialog is a modal; focus stays inside while open; Escape closes it.
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitAddModuleButton").click();
-        assertThat(dmPage.locator("#cockpitAddModuleDialog").evaluate("el => el.open"))
-                .isEqualTo(true);
-        Boolean trapHolds = (Boolean) dmPage.evaluate("""
-                () => {
-                  const dialog = document.getElementById('cockpitAddModuleDialog');
-                  if (!dialog || !dialog.open) return false;
-                  // showModal() moves focus into the dialog; keep it there.
-                  if (!dialog.contains(document.activeElement)) {
-                    const first = dialog.querySelector('button, [href], input, select, textarea');
-                    first?.focus();
-                  }
-                  return dialog.open && dialog.contains(document.activeElement);
-                }
-                """);
-        assertThat(trapHolds).as("Add dialog owns focus while open").isTrue();
-        dmPage.keyboard().press("Escape");
-        assertThat(dmPage.locator("#cockpitAddModuleDialog").evaluate("el => el.open"))
-                .as("Escape closes topmost Add dialog")
-                .isEqualTo(false);
-
-        // Exit edit cleanly (dirty → discard).
-        openCockpitMoreMenu();
-        dmPage.locator("#cockpitLayoutModeButton").click();
-        if (dmPage.locator("#cockpitLayoutExitDialog").isVisible()) {
-            dmPage.locator("[data-layout-exit='discard']").click();
-        }
-        assertThat(dmPage.locator("[data-cockpit-workbench]").getAttribute("data-layout-mode"))
-                .isEqualTo("locked");
 
         // Reduced-motion media removes meaningful transition duration on layout chrome.
         dmPage.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));

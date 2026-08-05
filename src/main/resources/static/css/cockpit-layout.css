@@ -91,9 +91,12 @@ body:has(.session-cockpit) .page--editor {
 }
 
 .cockpit-workbench {
-  --left-size: 20fr;
-  --primary-size: 56fr;
-  --right-size: 24fr;
+  /* Generic column ratios until the fixed per-preset grids land (Task 13): wide enough
+     on the left that Combat's LEFT_SUPPORT keeps tabs, and on the right that the combatant
+     rail fits its names. The layout script no longer sets per-preset ratios. */
+  --left-size: 18fr;
+  --primary-size: 52fr;
+  --right-size: 30fr;
   --top-size: 76fr;
   --bottom-size: 24fr;
   --splitter-size: 6px;
