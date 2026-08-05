@@ -7,16 +7,22 @@ opt-in behind a profile.
 
 | Command | Runs | Wall | Tests |
 |---|---|---|---|
-| `./mvnw test` | JVM tier | 66s | 2,346 |
-| `./mvnw test -P gates` | everything | 172s | 2,519 |
+| `./mvnw test` | JVM tier | 77s | 2,331 |
+| `./mvnw test -P gates` | everything | 193s | 2,574 |
 
 Both green as of the change that introduced this document. The full suite was 257s / 2,518
 before it; the extra test is net of two moved off the browser tier and one merged into it, so
 no assertion was dropped.
 
+**Updated 2026-08-04.** The appearance gates were consolidated into a single
+overflow gate (`gate/ViewportAccessibilityGateTest`); 14 style and render gates
+were deleted and `CockpitPresetSwitchingBrowserTest` was added, taking the browser
+tier from 30 classes to 17. Visual design requirements remain in force as design
+intent — they are no longer machine-enforced.
+
 ## Why
 
-The 21 Playwright classes were **6% of the tests and 64% of the wall clock** — 257s full
+The 17 Playwright classes were **6% of the tests and 64% of the wall clock** — 257s full
 against 92s without. That cost is paid on every task in a multi-task plan, where the browser
 gates almost never have anything to say about the template that just changed. Splitting the
 tiers makes the edit loop cheap without deleting a single assertion.
