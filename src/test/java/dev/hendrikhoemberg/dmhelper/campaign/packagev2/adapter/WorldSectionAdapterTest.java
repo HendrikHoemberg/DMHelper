@@ -471,7 +471,6 @@ class WorldSectionAdapterTest {
         a.timelineEvents(List.of());
         a.adventures(List.of());
         a.session(null);
-        a.diceRolls(List.of());
         a.audioCues(List.of());
     }
 
@@ -514,13 +513,12 @@ class WorldSectionAdapterTest {
         List<CampaignManifestV2.AssignmentDto> noAssign = List.of();
         List<CampaignManifestV2.LedgerEntryDto> noLedger = List.of();
         List<CampaignManifestV2.TimelineEventDto> noTimeline = List.of();
-        List<CampaignManifestV2.DiceRollDto> noDice = List.of();
         List<AssetDescriptor> noAssets = List.of();
         return new CampaignManifestV2(
                 2, null, null, noAssets, noParty,
                 noSb, noSpell, noCond, noRule, noEquip, noMagic, noClass, noSpecies, noBg, noFeat,
                 noHand, noMap, noEnc, noNote, noQn, noAssign, noLedger, noTimeline,
-                noAdv, null, noDice, noQ, noAnn,
+                noAdv, null, noQ, noAnn,
                 npcs, locations, factions, relationships, clocks, List.of(), List.of(), List.of(), List.of());
     }
 }

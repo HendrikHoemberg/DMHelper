@@ -116,7 +116,7 @@ public class CampaignImportPreviewStore {
     }
 
     private static CampaignEntityCounts counts(CampaignManifestV2 m) {
-        if (m == null) return new CampaignEntityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        if (m == null) return new CampaignEntityCounts(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
         int tokens = m.maps().stream().mapToInt(map -> size(map.tokens())).sum();
         int combatants = m.encounters().stream().mapToInt(encounter -> size(encounter.combatants())).sum();
         int chapters = m.adventures().stream().mapToInt(adventure -> size(adventure.chapters())).sum();
@@ -132,7 +132,7 @@ public class CampaignImportPreviewStore {
                 size(m.handouts()),
                 size(m.maps()), tokens, size(m.encounters()), combatants, size(m.notes()), size(m.quickNotes()),
                 size(m.assignments()), size(m.ledgerEntries()), size(m.timelineEvents()), size(m.adventures()),
-                chapters, scenes, size(m.assets()), combatLogEntries, size(m.diceRolls()), noteLinks,
+                chapters, scenes, size(m.assets()), combatLogEntries, noteLinks,
                 m.session() != null ? 1 : 0, sessionSceneVisits,
                 size(m.traps()), size(m.hazards()));
     }

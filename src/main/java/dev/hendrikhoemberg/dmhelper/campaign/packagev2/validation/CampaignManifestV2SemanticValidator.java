@@ -277,14 +277,6 @@ public class CampaignManifestV2SemanticValidator {
                 previousVisit = visit.visitedAt();
             }
         }
-        for (int i = 0; i < size(m.diceRolls()); i++) {
-            var roll = m.diceRolls().get(i);
-            add(keys, CampaignContentType.DICE_ROLL, roll.key(), "/diceRolls/" + i + "/key", problems);
-            if (roll.encounterRef() != null) {
-                check(roll.encounterRef(), "/diceRolls/" + i + "/encounterRef", keys, problems);
-            }
-        }
-
         for (int qi = 0; qi < size(m.quests()); qi++) {
             var q = m.quests().get(qi);
             add(keys, QUEST, q.key(), "/quests/" + qi + "/key", problems);
@@ -697,7 +689,6 @@ public class CampaignManifestV2SemanticValidator {
         var exclusions = m.metadata().exclusions();
         if (exclusions == null) return;
         boolean hasCombatLogExclusion = exclusions.contains(CampaignExportExclusion.COMBAT_LOG);
-        boolean hasDiceHistoryExclusion = exclusions.contains(CampaignExportExclusion.DICE_HISTORY);
 
         if (hasCombatLogExclusion) {
             for (int i = 0; i < size(m.encounters()); i++) {
@@ -706,14 +697,6 @@ public class CampaignManifestV2SemanticValidator {
                             "/encounters/" + i + "/combatLog",
                             "COMBAT_LOG exclusion is set but encounter has non-empty combat log");
                 }
-            }
-        }
-
-        if (hasDiceHistoryExclusion) {
-            if (size(m.diceRolls()) > 0) {
-                error(problems, "DICE_HISTORY_EXCLUDED_BUT_NON_EMPTY",
-                        "/diceRolls",
-                        "DICE_HISTORY exclusion is set but diceRolls is non-empty");
             }
         }
     }

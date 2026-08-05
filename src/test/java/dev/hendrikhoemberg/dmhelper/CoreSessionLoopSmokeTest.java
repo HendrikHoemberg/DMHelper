@@ -2533,7 +2533,7 @@ class CoreSessionLoopSmokeTest {
                 source.customBackgrounds(), source.customFeats(),
                 source.handouts(), source.maps(), source.encounters(), source.notes(),
                 source.quickNotes(), assignments, source.ledgerEntries(),
-                source.timelineEvents(), adventures, source.session(), source.diceRolls(),
+                source.timelineEvents(), adventures, source.session(),
                 source.quests(), source.annotations(), source.worldNpcs(), source.worldLocations(),
                 source.factions(), source.worldRelationships(), source.factionClocks(),
                 List.of(), // rollableTables

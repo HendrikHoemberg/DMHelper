@@ -317,7 +317,7 @@ class MapSectionAdapterTest {
                                 12, 20, false, "sneaky", "dagger"
                         )),
                         0, List.of())),
-                null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var freshCampaign = new Campaign();
         freshCampaign.setId(UUID.randomUUID());
@@ -411,7 +411,7 @@ class MapSectionAdapterTest {
                         ),
                         List.of(),
                         0, List.of())),
-                null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         // Stage asset file
         Path assetFile = tempDir.resolve(assetKey + ".png");
@@ -595,7 +595,6 @@ class MapSectionAdapterTest {
         a.timelineEvents(List.of());
         a.adventures(List.of());
         a.session(null);
-        a.diceRolls(List.of());
         a.audioCues(List.of());
     }
 

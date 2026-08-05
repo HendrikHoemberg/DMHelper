@@ -156,7 +156,7 @@ class LibrarySectionAdapterTest {
                 2, null, null, null,
                 null, manifest2.customStatBlocks(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var importContext = new CampaignImportContext(
                 freshCampaign.getId(), new CampaignSectionAdapterTest.FakeKeyService(), pendingImport());
@@ -252,7 +252,6 @@ class LibrarySectionAdapterTest {
         a.timelineEvents(List.of());
         a.adventures(List.of());
         a.session(null);
-        a.diceRolls(List.of());
         a.audioCues(List.of());
     }
 

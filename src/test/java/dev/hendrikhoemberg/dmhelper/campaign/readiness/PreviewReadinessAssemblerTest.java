@@ -86,7 +86,7 @@ class PreviewReadinessAssemblerTest {
                 List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(),
                 List.of(), List.of(), adventures,
-        null, List.of(), List.of(), List.of(),
+        null, List.of(), List.of(),
         List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
     }
 }

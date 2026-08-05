@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import dev.hendrikhoemberg.dmhelper.campaign.data.SourceAnnotationConfidence;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.key.CampaignContentType;
-import dev.hendrikhoemberg.dmhelper.dice.DiceResult;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapDocumentDto;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.MapLayerDto;
 import dev.hendrikhoemberg.dmhelper.library.data.LicenseClassification;
@@ -42,7 +41,6 @@ public record CampaignManifestV2(
         List<TimelineEventDto> timelineEvents,
         List<AdventureDto> adventures,
         SessionDto session,
-        List<DiceRollDto> diceRolls,
         List<QuestDto> quests,
         List<SourceAnnotationDto> annotations,
         List<WorldNpcDto> worldNpcs,
@@ -700,19 +698,6 @@ public record CampaignManifestV2(
             String type,
             ContentReference combatantRef,
             JsonNode payload,
-            Instant createdAt
-    ) {}
-
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    public record DiceRollDto(
-            String key,
-            String expression,
-            List<DiceResult.DieRoll> rolls,
-            int modifier,
-            int total,
-            boolean advantage,
-            boolean disadvantage,
-            ContentReference encounterRef,
             Instant createdAt
     ) {}
 

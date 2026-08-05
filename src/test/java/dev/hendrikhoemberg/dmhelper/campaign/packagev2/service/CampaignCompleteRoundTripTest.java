@@ -157,17 +157,16 @@ class CampaignCompleteRoundTripTest {
         assertThat(opted.encounters()).allSatisfy(encounter -> {
             if (!includeCombatLog) assertThat(encounter.combatLog()).isEmpty();
         });
-        if (!includeDiceHistory) assertThat(opted.diceRolls()).isEmpty();
 
         CampaignSemanticComparator.assertEquivalent(
                 CampaignSemanticSnapshot.from(withHistorySelection(
-                        complete, includeCombatLog, includeDiceHistory, exclusions)),
+                        complete, includeCombatLog, exclusions)),
                 CampaignSemanticSnapshot.from(opted));
         campaigns.delete(campaign.getId());
     }
 
     private CampaignManifestV2 withHistorySelection(
-            CampaignManifestV2 source, boolean includeCombatLog, boolean includeDiceHistory,
+            CampaignManifestV2 source, boolean includeCombatLog,
             List<CampaignExportExclusion> exclusions) {
         var encounters = source.encounters().stream()
                 .map(encounter -> new CampaignManifestV2.EncounterDto(
@@ -190,7 +189,7 @@ class CampaignCompleteRoundTripTest {
                 source.customBackgrounds(), source.customFeats(),
                 source.handouts(), source.maps(), encounters, source.notes(),
                 source.quickNotes(), source.assignments(), source.ledgerEntries(), source.timelineEvents(),
-                source.adventures(), source.session(), includeDiceHistory ? source.diceRolls() : List.of(),
+                source.adventures(), source.session(),
                 source.quests(), source.annotations(), source.worldNpcs(), source.worldLocations(),
                 source.factions(), source.worldRelationships(), source.factionClocks(),
                 source.rollableTables(), source.traps(), source.hazards(), source.audioCues());

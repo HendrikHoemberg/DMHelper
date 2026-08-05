@@ -148,7 +148,6 @@ class CampaignSectionRegistryTest {
             assembler.ledgerEntries(List.of());
             assembler.timelineEvents(List.of());
             assembler.adventures(List.of());
-            assembler.diceRolls(List.of());
             assembler.audioCues(List.of());
 
             var metadata = new CampaignManifestV2.Metadata(
@@ -196,14 +195,13 @@ class CampaignSectionRegistryTest {
             assembler.ledgerEntries(List.of());
             assembler.timelineEvents(List.of());
             assembler.adventures(List.of());
-            assembler.audioCues(List.of());
-            // diceRolls omitted
+            // audioCues omitted
 
             var metadata = new CampaignManifestV2.Metadata(
                     "pkg-key", null, "test", null, null, List.of());
             assertThatThrownBy(() -> assembler.build(metadata))
                     .isInstanceOf(IllegalStateException.class)
-                    .hasMessageContaining("diceRolls");
+                    .hasMessageContaining("audioCues");
         }
     }
 

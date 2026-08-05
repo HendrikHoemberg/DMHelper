@@ -111,7 +111,7 @@ class QuestSectionAdapterTest {
         var manifest = new CampaignManifestV2(
                 2, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null, List.of(), List.of(qDto), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, null, null, List.of(qDto), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         var keys = new CampaignSectionAdapterTest.FakeKeyService();
         var context = new CampaignImportContext(
                 campaignId, keys, new PendingCampaignImport(UUID.randomUUID(), null, null, null));
@@ -146,7 +146,6 @@ class QuestSectionAdapterTest {
         a.timelineEvents(List.of());
         a.adventures(List.of());
         a.session(null);
-        a.diceRolls(List.of());
         a.audioCues(List.of());
     }
 

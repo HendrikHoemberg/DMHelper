@@ -67,7 +67,6 @@ class CampaignImportPreviewStoreTest {
         assertThat(preview.counts().chapters()).isEqualTo(1);
         assertThat(preview.counts().scenes()).isEqualTo(1);
         assertThat(preview.counts().combatLogEntries()).isEqualTo(0);
-        assertThat(preview.counts().diceRolls()).isEqualTo(1);
         assertThat(preview.counts().noteLinks()).isEqualTo(1);
         assertThat(preview.counts().assets()).isEqualTo(manifest.assets().size());
         assertThat(preview.counts().partyMembers()).isEqualTo(manifest.party().size());

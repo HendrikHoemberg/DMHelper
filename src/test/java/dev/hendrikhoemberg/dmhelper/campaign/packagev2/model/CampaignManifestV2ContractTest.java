@@ -29,8 +29,16 @@ class CampaignManifestV2ContractTest {
         assertThat(manifest.metadata().exclusions()).isEmpty();
         assertThat(manifest.campaign().settings()).isNotNull();
         assertThat(manifest.campaign().settings().levelingMode()).isEqualTo(CampaignManifestV2.LevelingMode.XP);
-        assertThat(manifest.diceRolls()).isEmpty();
         assertThat(schema.validate(mapper.writeValueAsString(manifest))).isEmpty();
+    }
+
+    @Test
+    void manifestStillDeserializesWhenAPackageCarriesLegacyDiceRolls() throws Exception {
+        String json = fixture("campaigns/v2/minimal.dmcampaign.json");
+
+        CampaignManifestV2 manifest = mapper.readValue(json, CampaignManifestV2.class);
+
+        assertThat(manifest.campaign().name()).isNotBlank();
     }
 
     @Test

@@ -5,7 +5,7 @@
   "description": "Schema for the .dmcampaign.json v2 export/import format. All coordinate positions use grid-cell units. Grid coordinates use [col, row] order (zero-indexed from top-left). Currency amounts are in the units specified by the currency field (cp, sp, ep, gp, pp). Dates use ISO-8601 format.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["formatVersion", "metadata", "campaign", "assets", "party", "customStatBlocks", "customSpells", "customConditions", "customRules", "customEquipment", "customMagicItems", "customClasses", "customSpecies", "customBackgrounds", "customFeats", "handouts", "maps", "encounters", "notes", "quickNotes", "assignments", "ledgerEntries", "timelineEvents", "adventures", "diceRolls"],
+  "required": ["formatVersion", "metadata", "campaign", "assets", "party", "customStatBlocks", "customSpells", "customConditions", "customRules", "customEquipment", "customMagicItems", "customClasses", "customSpecies", "customBackgrounds", "customFeats", "handouts", "maps", "encounters", "notes", "quickNotes", "assignments", "ledgerEntries", "timelineEvents", "adventures"],
   "properties": {
     "formatVersion": { "type": "integer", "enum": [2, 3] },
     "metadata": { "$ref": "#/$defs/metadata" },

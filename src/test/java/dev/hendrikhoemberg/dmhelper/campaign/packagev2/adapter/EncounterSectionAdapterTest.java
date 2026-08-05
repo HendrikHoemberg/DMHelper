@@ -318,7 +318,7 @@ class EncounterSectionAdapterTest {
                 null, null, null, null, null, null, null, null, null,
                 null, null,
                 List.of(encounterDto),
-                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var encounter = invocation.getArgument(0, Encounter.class);
@@ -363,7 +363,7 @@ class EncounterSectionAdapterTest {
                 null, null, null, null, null, null, null, null, null,
                 null, null,
                 List.of(encounterDto),
-                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var encounter = invocation.getArgument(0, Encounter.class);
@@ -414,7 +414,7 @@ class EncounterSectionAdapterTest {
                 null, null, null, null, null, null, null, null, null,
                 null, null,
                 List.of(encounterDto),
-                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var e = invocation.getArgument(0, Encounter.class);
@@ -454,7 +454,7 @@ class EncounterSectionAdapterTest {
                 null, null, null, null, null, null, null, null, null,
                 null, null,
                 List.of(encounterDto),
-                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var e = invocation.getArgument(0, Encounter.class);
@@ -483,7 +483,7 @@ class EncounterSectionAdapterTest {
                 null, null, null, null, null, null, null, null, null,
                 null, null,
                 List.of(encounterDto),
-                null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         when(encounterRepository.save(any())).thenAnswer(invocation -> {
             var e = invocation.getArgument(0, Encounter.class);
@@ -543,7 +543,6 @@ class EncounterSectionAdapterTest {
         a.timelineEvents(List.of());
         a.adventures(List.of());
         a.session(null);
-        a.diceRolls(List.of());
         a.campaign(new CampaignManifestV2.CampaignDto("key", "test", null, null, null, null, null));
         a.audioCues(List.of());
         return a;

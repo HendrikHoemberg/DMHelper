@@ -6,7 +6,6 @@ import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.AssignmentDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.AudioCueDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.CampaignDto;
-import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.DiceRollDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.EncounterDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.HandoutDto;
 import dev.hendrikhoemberg.dmhelper.campaign.packagev2.model.CampaignManifestV2.LedgerEntryDto;
@@ -45,7 +44,6 @@ public class CampaignManifestAssembler {
     private List<TimelineEventDto> timelineEvents;
     private List<AdventureDto> adventures;
     private SessionDto session;
-    private List<DiceRollDto> diceRolls;
     private List<CampaignManifestV2.QuestDto> quests;
     private List<CampaignManifestV2.SourceAnnotationDto> annotations;
     private List<CampaignManifestV2.WorldNpcDto> worldNpcs;
@@ -179,11 +177,6 @@ public class CampaignManifestAssembler {
         session = value;
     }
 
-    public void diceRolls(List<DiceRollDto> value) {
-        checkNotAlreadySet("diceRolls", diceRolls);
-        diceRolls = List.copyOf(value);
-    }
-
     public void quests(List<CampaignManifestV2.QuestDto> value) {
         checkNotAlreadySet("quests", quests);
         quests = value == null ? List.of() : List.copyOf(value);
@@ -296,7 +289,6 @@ public class CampaignManifestAssembler {
         checkRequired("ledgerEntries", ledgerEntries);
         checkRequired("timelineEvents", timelineEvents);
         checkRequired("adventures", adventures);
-        checkRequired("diceRolls", diceRolls);
         checkRequired("audioCues", audioCues);
         built = true;
         return new CampaignManifestV2(
@@ -325,7 +317,6 @@ public class CampaignManifestAssembler {
                 timelineEvents,
                 adventures,
                 session,
-                diceRolls,
                 quests == null ? List.of() : quests,
                 annotations == null ? List.of() : annotations,
                 worldNpcs == null ? List.of() : worldNpcs,

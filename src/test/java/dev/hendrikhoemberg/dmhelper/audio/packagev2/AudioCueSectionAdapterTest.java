@@ -86,7 +86,7 @@ class AudioCueSectionAdapterTest {
                         Instant.now(), null, null, null),
                 null, null, null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(),
                 List.of(new AudioCueDto("cue-key", "Imported Cue", null, "VIDEO",
@@ -111,7 +111,7 @@ class AudioCueSectionAdapterTest {
                         Instant.now(), null, null, null),
                 null, null, null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(),
                 List.of(new AudioCueDto("cue-key", "Cue", "unknown-provider", "VIDEO",
@@ -130,7 +130,7 @@ class AudioCueSectionAdapterTest {
                         Instant.now(), null, null, null),
                 null, null, null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                null, null, null, null, null, null, null, null, null, null, null,
+                null, null, null, null, null, null, null, null, null, null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of());
 
@@ -182,7 +182,6 @@ class AudioCueSectionAdapterTest {
         a.timelineEvents(List.of());
         a.adventures(List.of());
         a.session(null);
-        a.diceRolls(List.of());
         a.quests(List.of());
         a.annotations(List.of());
         a.worldNpcs(List.of());

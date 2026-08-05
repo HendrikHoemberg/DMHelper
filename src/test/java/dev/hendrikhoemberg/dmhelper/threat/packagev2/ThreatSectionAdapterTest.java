@@ -157,7 +157,6 @@ class ThreatSectionAdapterTest {
         assembler.ledgerEntries(List.of());
         assembler.timelineEvents(List.of());
         assembler.adventures(List.of());
-        assembler.diceRolls(List.of());
         assembler.audioCues(List.of());
         return assembler;
     }
@@ -169,7 +168,7 @@ class ThreatSectionAdapterTest {
                 new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null, null),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                List.of(), List.of(), List.of(), List.of(), null, List.of(), List.of(), List.of(),
+                List.of(), List.of(), List.of(), List.of(), null, List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 traps, List.of(), List.of());
     }

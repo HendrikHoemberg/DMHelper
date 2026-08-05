@@ -96,7 +96,6 @@ class RollableTableSectionAdapterTest {
         assembler.ledgerEntries(List.of());
         assembler.timelineEvents(List.of());
         assembler.adventures(List.of());
-        assembler.diceRolls(List.of());
         assembler.audioCues(List.of());
 
         adapter.exportSection(ctx, assembler);
@@ -113,7 +112,6 @@ class RollableTableSectionAdapterTest {
         List<CampaignManifestV2.AssignmentDto> noAssign = List.of();
         List<CampaignManifestV2.LedgerEntryDto> noLedger = List.of();
         List<CampaignManifestV2.TimelineEventDto> noTimeline = List.of();
-        List<CampaignManifestV2.DiceRollDto> noDice = List.of();
         List<AssetDescriptor> noAssets = List.of();
         List<CampaignManifestV2.PartyMemberDto> noParty = List.of();
         List<CampaignManifestV2.StatBlockDto> noSb = List.of();
@@ -146,7 +144,7 @@ class RollableTableSectionAdapterTest {
                 new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null, null),
                 noAssets, noParty, noSb, noSpell, noCond, noRule, noEquip, noMagic,
                 noClass, noSpecies, noBg, noFeat, noHand, noMap, noEnc, noNote, noQn,
-                noAssign, noLedger, noTimeline, noAdv, null, noDice, noQ, noAnn,
+                noAssign, noLedger, noTimeline, noAdv, null, noQ, noAnn,
                 noNpcs, noLocations, noFactions, noRelationships, noClocks,
                 List.of(new RollableTableDto("table-key", null, "Test Table", null,
                         "RANGE", "1d6", "GENERIC", null, List.of(), null, null)), List.of(), List.of(), List.of());
@@ -174,7 +172,6 @@ class RollableTableSectionAdapterTest {
         List<CampaignManifestV2.AssignmentDto> noAssign = List.of();
         List<CampaignManifestV2.LedgerEntryDto> noLedger = List.of();
         List<CampaignManifestV2.TimelineEventDto> noTimeline = List.of();
-        List<CampaignManifestV2.DiceRollDto> noDice = List.of();
         List<AssetDescriptor> noAssets = List.of();
         List<CampaignManifestV2.PartyMemberDto> noParty = List.of();
         List<CampaignManifestV2.StatBlockDto> noSb = List.of();
@@ -207,7 +204,7 @@ class RollableTableSectionAdapterTest {
                 new CampaignManifestV2.CampaignDto("key", "name", null, null, null, null, null),
                 noAssets, noParty, noSb, noSpell, noCond, noRule, noEquip, noMagic,
                 noClass, noSpecies, noBg, noFeat, noHand, noMap, noEnc, noNote, noQn,
-                noAssign, noLedger, noTimeline, noAdv, null, noDice, noQ, noAnn,
+                noAssign, noLedger, noTimeline, noAdv, null, noQ, noAnn,
                 noNpcs, noLocations, noFactions, noRelationships, noClocks,
                 null, List.of(), List.of(), List.of());
 
@@ -256,7 +253,7 @@ class RollableTableSectionAdapterTest {
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
+                null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), tables, List.of(), List.of(), List.of());
     }
 }

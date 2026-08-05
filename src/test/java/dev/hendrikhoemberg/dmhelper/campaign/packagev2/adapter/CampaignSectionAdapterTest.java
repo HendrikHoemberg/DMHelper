@@ -91,7 +91,6 @@ public class CampaignSectionAdapterTest {
         assembler.timelineEvents(List.of());
         assembler.adventures(List.of());
         assembler.session(null);
-        assembler.diceRolls(List.of());
         assembler.audioCues(List.of());
 
         var metadata = new Metadata("pkg-key", null, "test", null, null, List.of());
@@ -112,7 +111,7 @@ public class CampaignSectionAdapterTest {
                         Instant.parse("2025-01-01T00:00:00Z"), null, null, null),
                 null, null, null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         var context = new CampaignImportContext(
                 UUID.randomUUID(), new FakeKeyService(), pendingImport());
 
@@ -137,7 +136,7 @@ public class CampaignSectionAdapterTest {
                 new CampaignDto("campaign-key", "Test", "desc", Instant.now(), null, sceneRef, null),
                 null, null, null,
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(),
-                null, null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, null, null, null, null, null, null, null, null, null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
 
         var context = new CampaignImportContext(
                 UUID.randomUUID(), new FakeKeyService(), pendingImport());

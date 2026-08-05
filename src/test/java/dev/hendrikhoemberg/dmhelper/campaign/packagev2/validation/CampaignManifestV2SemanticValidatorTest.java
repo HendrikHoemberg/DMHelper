@@ -42,7 +42,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(),
-                null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
+                null, List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
     }
 
     @Test
@@ -62,7 +62,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.customBackgrounds(), manifest.customFeats(),
                 manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
-                manifest.timelineEvents(), List.of(adv, adv2), manifest.session(), manifest.diceRolls(),
+                manifest.timelineEvents(), List.of(adv, adv2), manifest.session(),
                 manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest2))
                 .extracting(CampaignImportProblem::code)
@@ -80,7 +80,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.customBackgrounds(), manifest.customFeats(),
                 List.of(handout), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
-                manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
+                manifest.timelineEvents(), manifest.adventures(), manifest.session(),
                 manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest2))
                 .extracting(CampaignImportProblem::code)
@@ -107,7 +107,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.customBackgrounds(), manifest.customFeats(),
                 manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
-                manifest.timelineEvents(), List.of(adv), manifest.session(), manifest.diceRolls(),
+                manifest.timelineEvents(), List.of(adv), manifest.session(),
                 manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         var problems = validator.validate(manifest2);
         assertThat(problems).extracting(CampaignImportProblem::code)
@@ -129,7 +129,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.customBackgrounds(), manifest.customFeats(),
                 manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
-                manifest.timelineEvents(), List.of(adv), manifest.session(), manifest.diceRolls(),
+                manifest.timelineEvents(), List.of(adv), manifest.session(),
                 manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest2))
                 .extracting(CampaignImportProblem::code)
@@ -149,7 +149,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.customBackgrounds(), manifest.customFeats(),
                 manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
-                manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
+                manifest.timelineEvents(), manifest.adventures(), manifest.session(),
                 manifest.quests(), List.of(annotation), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest2))
                 .extracting(CampaignImportProblem::code)
@@ -177,7 +177,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.customBackgrounds(), manifest.customFeats(),
                 manifest.handouts(), manifest.maps(), List.of(encounter),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
-                manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
+                manifest.timelineEvents(), manifest.adventures(), manifest.session(),
                 manifest.quests(), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest2))
                 .extracting(CampaignImportProblem::code)
@@ -200,7 +200,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.customBackgrounds(), manifest.customFeats(),
                 manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
-                manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
+                manifest.timelineEvents(), manifest.adventures(), manifest.session(),
                 List.of(quest), manifest.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         var problems = validator.validate(manifest2);
         assertThat(problems).extracting(CampaignImportProblem::code)
@@ -220,7 +220,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 manifest.customBackgrounds(), manifest.customFeats(),
                 manifest.handouts(), manifest.maps(), manifest.encounters(),
                 manifest.notes(), manifest.quickNotes(), manifest.assignments(), manifest.ledgerEntries(),
-                manifest.timelineEvents(), manifest.adventures(), manifest.session(), manifest.diceRolls(),
+                manifest.timelineEvents(), manifest.adventures(), manifest.session(),
                 manifest.quests(), List.of(annotation), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest2))
                 .extracting(CampaignImportProblem::code)
@@ -297,7 +297,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 base.customBackgrounds(), base.customFeats(),
                 base.handouts(), base.maps(), base.encounters(),
                 base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
-                base.timelineEvents(), base.adventures(), base.session(), base.diceRolls(),
+                base.timelineEvents(), base.adventures(), base.session(),
                 List.of(quest), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest))
                 .extracting(CampaignImportProblem::code)
@@ -321,7 +321,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 base.customBackgrounds(), base.customFeats(),
                 base.handouts(), base.maps(), base.encounters(),
                 List.of(note), base.quickNotes(), base.assignments(), base.ledgerEntries(),
-                base.timelineEvents(), base.adventures(), base.session(), base.diceRolls(),
+                base.timelineEvents(), base.adventures(), base.session(),
                 List.of(quest), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest))
                 .extracting(CampaignImportProblem::code)
@@ -347,7 +347,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 base.customBackgrounds(), base.customFeats(),
                 base.handouts(), base.maps(), base.encounters(),
                 base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
-                base.timelineEvents(), List.of(adv), base.session(), base.diceRolls(),
+                base.timelineEvents(), List.of(adv), base.session(),
                 base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest))
                 .extracting(CampaignImportProblem::code)
@@ -375,7 +375,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 base.customBackgrounds(), base.customFeats(),
                 base.handouts(), base.maps(), base.encounters(),
                 List.of(note), base.quickNotes(), base.assignments(), base.ledgerEntries(),
-                base.timelineEvents(), List.of(adv), base.session(), base.diceRolls(),
+                base.timelineEvents(), List.of(adv), base.session(),
                 base.quests(), base.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest))
                 .extracting(CampaignImportProblem::code)
@@ -410,7 +410,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 base.customBackgrounds(), base.customFeats(),
                 base.handouts(), base.maps(), base.encounters(),
                 base.notes(), base.quickNotes(), base.assignments(), base.ledgerEntries(),
-                base.timelineEvents(), List.of(adv), base.session(), base.diceRolls(),
+                base.timelineEvents(), List.of(adv), base.session(),
                 base.quests(), base.annotations(), List.of(npc), List.of(location),
                 List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
         assertThat(validator.validate(manifest)).isEmpty();
@@ -687,7 +687,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 m.customBackgrounds(), m.customFeats(),
                 m.handouts(), m.maps(), m.encounters(),
                 m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
-                m.timelineEvents(), List.of(adventure), m.session(), m.diceRolls(),
+                m.timelineEvents(), List.of(adventure), m.session(),
                 m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(trap), List.of(), List.of());
         assertThat(validator.validate(manifest))
@@ -713,7 +713,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 m.customBackgrounds(), m.customFeats(),
                 m.handouts(), List.of(map), m.encounters(),
                 m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
-                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                m.timelineEvents(), m.adventures(), m.session(),
                 m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(trap), List.of(), List.of());
         assertThat(validator.validate(manifest))
@@ -744,7 +744,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 m.customBackgrounds(), m.customFeats(),
                 m.handouts(), m.maps(), List.of(encounter),
                 m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
-                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                m.timelineEvents(), m.adventures(), m.session(),
                 m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(trap), List.of(), List.of());
         assertThat(validator.validate(manifest))
@@ -814,7 +814,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 m.customBackgrounds(), m.customFeats(),
                 m.handouts(), m.maps(), m.encounters(),
                 m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
-                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                m.timelineEvents(), m.adventures(), m.session(),
                 m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), traps, List.of(), List.of());
     }
@@ -828,7 +828,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 m.customBackgrounds(), m.customFeats(),
                 handouts, m.maps(), m.encounters(),
                 m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
-                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                m.timelineEvents(), m.adventures(), m.session(),
                 m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(),
                 List.of(), List.of(), List.of(), List.of());
     }
@@ -842,7 +842,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 m.customBackgrounds(), m.customFeats(),
                 m.handouts(), m.maps(), m.encounters(),
                 m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
-                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                m.timelineEvents(), m.adventures(), m.session(),
                 m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), tables, List.of(), List.of(), List.of());
     }
 
@@ -877,7 +877,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 m.customBackgrounds(), m.customFeats(),
                 m.handouts(), m.maps(), List.of(encounter),
                 m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
-                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                m.timelineEvents(), m.adventures(), m.session(),
                 m.quests(), m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
     }
 
@@ -890,7 +890,7 @@ class CampaignManifestV2SemanticValidatorTest {
                 m.customBackgrounds(), m.customFeats(),
                 m.handouts(), m.maps(), m.encounters(),
                 m.notes(), m.quickNotes(), m.assignments(), m.ledgerEntries(),
-                m.timelineEvents(), m.adventures(), m.session(), m.diceRolls(),
+                m.timelineEvents(), m.adventures(), m.session(),
                 quests, m.annotations(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of(), List.of());
     }
 }

@@ -114,7 +114,6 @@ class EncounterPlacementPackageTest {
         var emptyLedger = java.util.Collections.<CampaignManifestV2.LedgerEntryDto>emptyList();
         var emptyTimeline = java.util.Collections.<CampaignManifestV2.TimelineEventDto>emptyList();
         var emptyAdventures = java.util.Collections.<CampaignManifestV2.AdventureDto>emptyList();
-        var emptyDiceRolls = java.util.Collections.<CampaignManifestV2.DiceRollDto>emptyList();
         var emptyQuests = java.util.Collections.<CampaignManifestV2.QuestDto>emptyList();
         var emptyAnnotations = java.util.Collections.<CampaignManifestV2.SourceAnnotationDto>emptyList();
         var emptyWorldNpcs = java.util.Collections.<CampaignManifestV2.WorldNpcDto>emptyList();
@@ -151,7 +150,7 @@ class EncounterPlacementPackageTest {
                 emptyEquipment, emptyMagicItems, emptyClasses, emptySpecies, emptyBackgrounds, emptyFeats,
                 emptyHandouts, emptyMaps, encounters,
                 emptyNotes, emptyQuickNotes, emptyAssignments, emptyLedger, emptyTimeline, emptyAdventures,
-                null, emptyDiceRolls,
+                null,
                 emptyQuests, emptyAnnotations, emptyWorldNpcs, emptyWorldLocations, emptyFactions,
                 emptyRelationships, emptyFactionClocks, emptyRollableTables, emptyTraps, emptyHazards, emptyAudioCues);
     }
