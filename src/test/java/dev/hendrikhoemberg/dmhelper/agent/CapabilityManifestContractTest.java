@@ -30,7 +30,6 @@ class CapabilityManifestContractTest {
                 .collect(Collectors.toSet());
         assertThat(ids).contains(
                 "p0.runtime_reliability",
-                "package.v1.contract",
                 "package.v2.foundation",
                 "package.v2.round_trip",
                 "session.cockpit",

@@ -15,57 +15,32 @@ The play surface is a four-zone workbench owned by the viewport. The **document 
 
 Nine modules ship in the registry: Story, Map, Encounter, Party, Session plan, Quick notes, Reference, Audio, and Session log. Every module appears at most once.
 
-Command chrome (identity, preset picker, Edit layout, Search, Dice, Session) stays reachable above the workbench.
+Command chrome (identity, preset picker, Search, Dice, Session) stays reachable above the workbench.
 
-### Locked default and Edit layout
+### Fixed presets
 
-Every page load starts **locked**. While locked:
-
-- dividers, Add module, Remove, docking, and reorder are unavailable;
-- Story / Encounter / Map content remain fully operable;
-- combat and scene changes **never** switch layouts — hidden or inactive modules only receive **attention badges**.
-
-Click **Edit layout** once to unlock layout chrome. Click **Done** (the same control) once to leave edit:
-
-- no changes → locks immediately;
-- dirty layout → Save preset / Discard changes dialog.
-
-**Save preset** writes a named custom preset (or updates the open custom one). **Discard changes** restores the snapshot from when you entered edit and leaves all campaign/session state untouched.
-
-### Built-in presets and shortcuts
-
-Four immutable built-ins ship with the app:
+The cockpit ships with four immutable built-in presets:
 
 | Shortcut | Preset | Typical primary |
 |----------|--------|-----------------|
-| `Alt+Shift+1` | Exploration | Story |
-| `Alt+Shift+2` | Combat | Map |
-| `Alt+Shift+3` | Theatre of Mind | Encounter |
-| `Alt+Shift+4` | Session Review | Session log |
+| `1` | Exploration | Story |
+| `2` | Combat | Map |
+| `3` | Theatre of Mind | Encounter |
+| `4` | Session Review | Session log |
 
-Shortcuts apply only when no modal or text field owns the keystroke. Preset changes are always manual; layout chrome settles within 100 ms.
+Switch presets from the **preset picker** in the command bar or with the digit keys `1`–`4`. Combat and scene changes **never** switch the active preset — hidden or inactive modules only receive **attention badges**. Shortcuts apply only when no modal or text field owns the keystroke.
 
-### Custom presets
+### Zone collapse
 
-Use the overflow actions to **Duplicate**, **Rename**, **Delete**, or **Restore** a built-in after local edits. Custom presets persist in local application data (not inside a campaign package). They never ride campaign export/import.
-
-### Add, arrange, dock, and separators
-
-In edit mode:
-
-- **Add module** opens a dialog of modules not currently placed (no duplicates);
-- each module’s **Arrange** menu is the keyboard equivalent of pointer docking (zone moves, earlier/later tab order);
-- drag a module header onto a zone dock target for pointer docking;
-- Map cannot leave Primary; Primary always keeps at least one module;
-- separators resize only adjacent zones and clamp to ratio plus module minima (`aria-valuenow` updates; arrows step 2%, Shift+arrows 10%).
+Each zone has a **collapse** button in its tab strip. Click it to fold the zone away; click again to restore it. Collapse state is remembered per browser.
 
 ### Focus and Return
 
-Modules that support Focus open a full-workbench focus layer. **Return** (or Escape) restores the previous layout and puts keyboard focus back on the Focus control. Focus never mutates a named preset.
+Modules that support Focus open a full-workbench focus layer. **Return** (or Escape) restores the previous layout and puts keyboard focus back on the Focus control. Focus never changes the active preset.
 
-### Device-only recovery
+### Device-only state
 
-Last preset, active tabs, and unfinished edit drafts live in browser `localStorage` keys under `dmhelper.cockpit.*`. Corrupt values are ignored with a non-blocking notice. Failed preset saves keep edit mode and the recoverable draft.
+The selected preset and each zone's collapsed state live in browser `localStorage` keys under `dmhelper.cockpit.*`. Corrupt values are ignored with a non-blocking notice.
 
 ## Module responsibilities
 
@@ -94,7 +69,7 @@ Nine runtime modules ship in the cockpit registry. Four modules are server-rende
 
 ### Compact vs Focus behaviour
 
-- `COMPACT` is **not** derived from the zone. Each preset names the modules it wants condensed in its own `compactModuleKeys` set (`CockpitBuiltInPresetCatalog.java`); everything else renders `STANDARD`. Exploration condenses Session plan, Party, Audio and Reference. Combat condenses Story, Party, Quick notes, Reference, Audio and Session log. Theatre of Mind condenses Party, Reference, Quick notes, Audio and Session log. Session Review condenses Session plan, Quick notes and Party.
+- `COMPACT` is **not** derived from the zone. Each preset names the modules it wants condensed in its own compact set (fixed in `cockpit-layout.js`); everything else renders `STANDARD`. Exploration condenses Session plan, Party, Audio and Reference. Combat condenses Story, Party, Quick notes, Reference, Audio and Session log. Theatre of Mind condenses Party, Reference, Quick notes, Audio and Session log. Session Review condenses Session plan, Quick notes and Party.
 - A `COMPACT` Story module shows the scene title and read-aloud text only — its summary, DM notes, sections and participants are `STANDARD`-only. That is deliberate: in Combat the Story rail is a prompter, not a reference.
 - Modules that support **Focus** open a full-workbench overlay. **Return** (or `Escape`) restores the previous layout and returns keyboard focus to the Focus trigger.
 
@@ -112,7 +87,7 @@ Nine runtime modules ship in the cockpit registry. Four modules are server-rende
 
 ### No automatic preset switching
 
-Combat and scene changes never switch the active preset. Hidden or inactive modules receive **attention badges** instead — the DM must choose to switch presets manually (picker, keyboard shortcut, or edit-mode add).
+Combat and scene changes never switch the active preset. Hidden or inactive modules receive **attention badges** instead — the DM must choose to switch presets manually (picker or keyboard shortcut).
 
 ### Runtime vs Edit/Admin boundary
 
@@ -124,7 +99,7 @@ Combat and scene changes never switch the active preset. Hidden or inactive modu
 
 | Key | Action |
 |-----|--------|
-| `Alt+Shift+1`…`4` | Select built-in preset |
+| `1`…`4` | Select built-in preset |
 | `[` / `]` | Step previous / next scene |
 | `n` | Advance encounter turn |
 | `q` | Focus quick notes input |
@@ -232,7 +207,7 @@ When no modal or input is focused:
 
 | Key | Action |
 |-----|--------|
-| `Alt+Shift+1`…`4` | Select built-in Exploration / Combat / Theatre of Mind / Session Review |
+| `1`…`4` | Select built-in Exploration / Combat / Theatre of Mind / Session Review |
 | `[` / `]` | Step to previous / next scene |
 | `n` | Advance encounter turn |
 | `q` | Focus quick notes input |

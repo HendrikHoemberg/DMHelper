@@ -1,7 +1,7 @@
 {
   "manifestVersion": 1,
   "catalogVersion": "srd-5.2-dmhelper-1",
-  "packageFormatVersions": [1, 2],
+  "packageFormatVersions": [2],
   "rulesets": ["SRD_5_2"],
   "endpoints": {
     "schemas": "/api/v1/schemas/{name}",
@@ -20,12 +20,6 @@
       "status": "SUPPORTED",
       "deliveryItem": 1,
       "notes": "Quick notes; ContentDestinationRegistry route contract tests; dm-request.js correlated errors; package asset safety; difficulty labeled estimate"
-    },
-    {
-      "id": "package.v1.contract",
-      "name": "Campaign contract v1",
-      "status": "SUPPORTED",
-      "notes": "Schema, DTO, dry-run, import, references, and checked fixtures share one contract"
     },
     {
       "id": "package.v2.foundation",

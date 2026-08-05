@@ -1,7 +1,7 @@
 # DM-Only Readiness — Release Verification Record
 
 **Date:** 2026-07-20
-**Plan:** docs/superpowers/plans/2026-07-20-dm-readiness-release-verification.md
+**Plan:** docs/superpowers/archive/plans/2026-07-20-dm-readiness-release-verification.md
 **Decision:** PENDING
 
 ## 1. Full automated suite (master §21)

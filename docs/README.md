@@ -8,6 +8,9 @@ Welcome to the DMHelper documentation. This directory contains:
 - [Architecture Reference](architecture/) — Module ownership, import/export flow, security boundaries, testing strategy.
 - [Agent SDK](agent/) — SDK reference for programmatic campaign generation.
 
+Historical design records — completed and superseded plans and specifications — live under
+[`superpowers/archive/`](superpowers/archive/README.md).
+
 ## Key Reference Files
 
 - [All-in-One Release Gate](product/all-in-one-release-gate.md) — Executable release gate for the all-in-one premise.

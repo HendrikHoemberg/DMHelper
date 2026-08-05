@@ -208,9 +208,13 @@ Plus their tests: `CockpitLayoutPresetServiceTest`, `CockpitLayoutApiControllerT
 
 ### 6.3 Rewrite
 
-- `static/js/cockpit-layout.js`: **2,246 → ~200.** Apply preset class, toggle zone collapse,
-  remember both in `localStorage`. Nothing else.
-- `static/css/cockpit-layout.css`: **702 → ~250.** Four grid definitions and a collapse rule.
+- `static/js/cockpit-layout.js`: **2,246 → ~600.** Apply preset class, toggle zone collapse,
+  remember both in `localStorage` — but retain the module-placement engine (depot round-trip,
+  zone tabs) that the four fixed presets require. Corrected from the original ~200 projection,
+  which did not account for the placement engine and zone tabs being retained behaviour.
+- `static/css/cockpit-layout.css`: **702 → ~505.** Four grid definitions, zone chrome, the
+  focus layer, and a collapse rule. The file is the sole home of viewport pinning, shell
+  sizing, zone chrome, and the focus layer. Corrected from the original ~250 projection.
 - `session/layout/CockpitBuiltInPresetCatalog.java` (80): simplified to the source of truth
   for the four preset keys and their module-to-zone assignments.
 - `session/layout/CockpitModuleRegistry.java` (89) and `CockpitModuleDefinition.java` (27):
@@ -277,8 +281,10 @@ Also remove `target/ui-redesign/` screenshot output and its `.gitignore` entry i
 
 ### 7.4 Documentation
 
-`docs/test-tiers.md` is updated: the browser tier drops from 30 classes to 16, and the
-recorded wall-clock figures are re-measured rather than estimated.
+`docs/test-tiers.md` is updated: the browser tier drops from 30 classes to 17, and the
+recorded wall-clock figures are re-measured rather than estimated. (Task 12 adds
+`CockpitPresetSwitchingBrowserTest`, so the tier lands at 17, not the 16 that the 14 deletions
+in §7.3 imply.)
 
 **Net ~2,400 lines.**
 
@@ -346,10 +352,10 @@ Net lines removed per stage, counting all trees (`src/main/java`, `src/main/reso
 |---|---|---|---|---|
 | 1 — Free wins | −671 (relocated) | — | −524, +671 | ~−525 |
 | 2 — v1 excision | −2,846 | — | −1,700 | ~−4,550 |
-| 3 — Layout engine | −785 | −2,498 | −400 | ~−3,700 |
+| 3 — Layout engine | −785 | ~−2,100 | −400 | ~−3,300 |
 | 4 — Appearance gates | — | — | −2,416 | ~−2,400 |
 | 5 — Export trim | −160 | — | −100 | ~−260 |
-| **Total** | **−4,462** | **−2,498** | **−4,469** | **~−11,400** |
+| **Total** | **−4,462** | **~−2,100** | **−4,469** | **~−11,000** |
 
 Stage 1's 671 lines are relocated from `src/main` to `src/test`, not deleted — they leave the
 production jar and component scanning but remain in the repository.
@@ -359,11 +365,11 @@ Resulting totals:
 | Tree | Before | After |
 |---|---|---|
 | `src/main/java` | 56,573 | ~52,100 |
-| `src/main/resources/static` | 21,932 | ~19,400 |
+| `src/main/resources/static` | 21,932 | ~19,800 |
 | `src/test/java` | 68,854 | ~64,400 |
 
 The import/export subsystem falls from 14,224 lines (25% of main) to ~10,550 (~20%). The
-browser tier falls from 30 classes to 16.
+browser tier falls from 30 classes to 17.
 
 All line counts in this document are measured, not estimated, except those marked `~`, which
 are projections for code being rewritten rather than deleted.
