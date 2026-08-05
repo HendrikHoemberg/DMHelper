@@ -5,7 +5,7 @@ All Java packages live under `dev.hendrikhoemberg.dmhelper.*`.
 | Package | Responsibility |
 |---|---|
 | `adventure` | Structured adventures: chapters, scenes, transitions, checks, participants, scene links |
-| `campaign` | Campaign CRUD, settings, package import/export (V1 and V2), package keys, catalog, validation |
+| `campaign` | Campaign CRUD, settings, package import/export (V2), package keys, catalog, validation |
 | `calendar` | In-game calendar configuration, date advancement, timeline events |
 | `common` | Shared config: PIN management, interceptors, exception handling, utilities |
 | `config` | Application-level configuration (Spring Beans, WebMvc, CORS) |
