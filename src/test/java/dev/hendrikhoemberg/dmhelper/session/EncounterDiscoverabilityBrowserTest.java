@@ -132,6 +132,28 @@ class EncounterDiscoverabilityBrowserTest {
     }
 
     @Test
+    void runningAnEncounterBeforeSessionStartOffersToStartAndRunsItAfter() {
+        var seeded = fixtures.campaignWithPlannedEncounterAndNoSession();
+        page.navigate("http://127.0.0.1:" + port + "/campaigns/" + seeded.campaignId() + "/session");
+        page.waitForFunction("() => window.cockpitLayout?.mounted === true");
+        page.selectOption("#cockpitPresetPicker", "builtin:combat");
+        page.waitForSelector(".planned-encounter-row");
+
+        assertThat(page.locator(".encounter-rail__action").first().isDisabled())
+                .as("run buttons must not invite a doomed request before the session is open")
+                .isTrue();
+
+        page.navigate("http://127.0.0.1:" + port + "/campaigns/" + seeded.campaignId()
+                + "/session?runEncounter=" + seeded.encounterId());
+        page.waitForSelector("#sessionLifecycleDialog[open]");
+        assertThat(page.locator("#sessionLifecycleDialog").innerText())
+                .contains("will run automatically");
+        page.locator("#sessionLifecycleDialog button", new Page.LocatorOptions().setHasText("Start")).click();
+        page.waitForSelector(".combatant-row");
+        assertThat(page.locator(".tracker-list").isVisible()).isTrue();
+    }
+
+    @Test
     void endingAnEncounterReportsTheXpItWasWorth() {
         var seeded = fixtures.campaignWithGroupedEncounter();
         page.navigate("http://127.0.0.1:" + port + "/campaigns/" + seeded.campaignId() + "/session");

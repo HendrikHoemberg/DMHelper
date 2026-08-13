@@ -22,7 +22,7 @@
         <span class="text-muted u-text-sm">Used by:</span>
         <span class="badge badge-tag"
               th:each="ref : ${#lists.size(mapReferences.get(map.id)) > 3
-                        ? #lists.subList(mapReferences.get(map.id), 0, 3)
+                        ? mapReferences.get(map.id).subList(0, 3)
                         : mapReferences.get(map.id)}"
               th:text="${ref}">Scene</span>
         <span class="text-muted u-text-sm"

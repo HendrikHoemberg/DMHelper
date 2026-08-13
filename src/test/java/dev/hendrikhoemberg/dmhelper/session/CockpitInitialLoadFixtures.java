@@ -142,6 +142,59 @@ public class CockpitInitialLoadFixtures {
 
     public record TwoEncounters(UUID campaignId, UUID mapA, UUID mapB, UUID encounterA, UUID encounterB) {}
     public record GroupedEncounter(UUID campaignId, UUID mapId, UUID encounterId, String groupId, List<UUID> memberIds) {}
+    public record NoSessionEncounter(UUID campaignId, UUID mapId, UUID encounterId) {}
+
+    /**
+     * A runnable planned encounter in a campaign whose session has never been started, so no
+     * {@code campaign_session} row exists. Mirrors the state a freshly imported campaign is in.
+     */
+    @Transactional
+    public NoSessionEncounter campaignWithPlannedEncounterAndNoSession() {
+        Campaign campaign = new Campaign();
+        campaign.setName("Pre-Session Fixture");
+        campaigns.save(campaign);
+
+        GameMap map = new GameMap();
+        map.setCampaign(campaign);
+        map.setName("Fixture Map");
+        maps.save(map);
+
+        Adventure adv = new Adventure();
+        adv.setCampaign(campaign);
+        adv.setName("Fixture Adventure");
+        adventures.save(adv);
+
+        Chapter ch = new Chapter();
+        ch.setAdventure(adv);
+        ch.setTitle("Chapter 1");
+        ch = chapters.save(ch);
+
+        Scene scene = new Scene();
+        scene.setChapter(ch);
+        scene.setTitle("Crypt Door");
+        scene.setBody("The stone door looms before you.");
+        scene.setSortOrder(1);
+        scene.setMap(map);
+        scenes.save(scene);
+
+        adventureService.setCurrentScene(campaign.getId(), scene.getId());
+
+        Encounter encounter = new Encounter();
+        encounter.setCampaign(campaign);
+        encounter.setMap(map);
+        encounter.setName("Pre-Session Encounter");
+        encounter.setStatus(Encounter.Status.PLANNED);
+        encounters.save(encounter);
+
+        Combatant goblin = new Combatant();
+        goblin.setEncounter(encounter);
+        goblin.setName("Goblin");
+        goblin.setMaxHp(7);
+        goblin.setCurrentHp(7);
+        combatants.save(goblin);
+
+        return new NoSessionEncounter(campaign.getId(), map.getId(), encounter.getId());
+    }
 
     @Transactional
     public TwoEncounters campaignWithTwoEncountersOnTwoMaps() {

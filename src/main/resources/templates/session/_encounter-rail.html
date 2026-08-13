@@ -40,6 +40,8 @@
                             : 'Runnable now; placement happens on activation'">Ready</span>
               <button class="btn btn-ghost encounter-rail__action" data-runtime-action
                       th:attr="data-encounter-id=${enc.id}"
+                      :disabled="sessionStatus === 'IDLE'"
+                      :title="sessionStatus === 'IDLE' ? 'Start the session first' : null"
                       @click="runEncounter($el.dataset.encounterId)">Run</button>
             </div>
           </th:block>
@@ -66,6 +68,8 @@
 
               <button class="btn btn-ghost encounter-rail__action" data-runtime-action
                       th:attr="data-encounter-id=${enc.id}"
+                      :disabled="sessionStatus === 'IDLE'"
+                      :title="sessionStatus === 'IDLE' ? 'Start the session first' : null"
                       @click="runEncounter($el.dataset.encounterId)">Run</button>
             </div>
           </th:block>
@@ -88,6 +92,8 @@
         </span>
         <button class="btn btn-ghost encounter-rail__action" data-runtime-action
                 th:attr="data-encounter-id=${enc.id}"
+                :disabled="sessionStatus === 'IDLE'"
+                :title="sessionStatus === 'IDLE' ? 'Start the session first' : null"
                 @click="runEncounter($el.dataset.encounterId)">Resume</button>
       </div>
     </th:block>
@@ -104,6 +110,8 @@
         </span>
         <button class="btn btn-ghost encounter-rail__action" data-runtime-action
                 th:attr="data-encounter-id=${enc.id}"
+                :disabled="sessionStatus === 'IDLE'"
+                :title="sessionStatus === 'IDLE' ? 'Start the session first' : null"
                 @click="runEncounter($el.dataset.encounterId)">Reopen</button>
       </div>
     </th:block>

@@ -1,8 +1,10 @@
 package dev.hendrikhoemberg.dmhelper.gamemap.web;
 
+import dev.hendrikhoemberg.dmhelper.adventure.data.Scene;
 import dev.hendrikhoemberg.dmhelper.adventure.data.SceneRepository;
 import dev.hendrikhoemberg.dmhelper.campaign.data.Campaign;
 import dev.hendrikhoemberg.dmhelper.campaign.data.CampaignRepository;
+import dev.hendrikhoemberg.dmhelper.encounter.data.Encounter;
 import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.gamemap.data.GameMap;
 import dev.hendrikhoemberg.dmhelper.gamemap.service.GameMapService;
@@ -63,6 +65,33 @@ class GameMapControllerTest {
         mockMvc.perform(get("/campaigns/{campaignId}/maps", campaignId))
                 .andExpect(status().isOk())
                 .andExpect(view().name("maps/list"));
+    }
+
+    @Test
+    void shouldTruncateLongReferenceLists() throws Exception {
+        UUID campaignId = UUID.randomUUID();
+        GameMap m = map("Tavern");
+        when(service.findByCampaignId(campaignId)).thenReturn(List.of(m));
+        when(sceneRepository.findByMapId(m.getId())).thenReturn(List.of(
+                scene("Scene A"), scene("Scene B"), scene("Scene C"), scene("Scene D")));
+        when(encounterRepository.findByMapIdOrderByNameAsc(m.getId()))
+                .thenReturn(List.of(encounter("Encounter E")));
+
+        mockMvc.perform(get("/campaigns/{campaignId}/maps", campaignId))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("+2 more")));
+    }
+
+    private Scene scene(String title) {
+        Scene s = new Scene();
+        s.setTitle(title);
+        return s;
+    }
+
+    private Encounter encounter(String name) {
+        Encounter e = new Encounter();
+        e.setName(name);
+        return e;
     }
 
     @Test

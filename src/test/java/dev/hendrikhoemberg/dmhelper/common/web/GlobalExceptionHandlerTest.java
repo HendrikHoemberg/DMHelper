@@ -99,11 +99,27 @@ class GlobalExceptionHandlerTest {
                 .andExpect(content().string(not(containsString("No static resource"))));
     }
 
+    @Test
+    void sessionNotOpenIsAConflictWithAMachineReadableCode() throws Exception {
+        mvc.perform(get("/session-not-open").accept(MediaType.APPLICATION_JSON)
+                        .header(CorrelationIdFilter.HEADER, "test-corr-4091"))
+                .andExpect(status().isConflict())
+                .andExpect(header().string(CorrelationIdFilter.HEADER, "test-corr-4091"))
+                .andExpect(jsonPath("$.title").value("Session Not Open"))
+                .andExpect(jsonPath("$.detail").value("Start the session before running an encounter."))
+                .andExpect(jsonPath("$.code").value("SESSION_NOT_OPEN"));
+    }
+
     @RestController
     static class FailingController {
         @GetMapping("/explode")
         String explode() {
             throw new IllegalStateException("database-password=/private/path");
+        }
+
+        @GetMapping("/session-not-open")
+        String sessionNotOpen() {
+            throw new dev.hendrikhoemberg.dmhelper.session.service.SessionNotOpenException();
         }
 
         @GetMapping("/required-param")

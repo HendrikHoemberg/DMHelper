@@ -116,6 +116,8 @@
                 data-runtime-action
                 th:if="${view.linkedEncounterId != null}"
                 th:attr="data-encounter-id=${view.linkedEncounterId}"
+                :disabled="sessionStatus === 'IDLE'"
+                :title="sessionStatus === 'IDLE' ? 'Start the session first' : null"
                 @click="runEncounter($el.dataset.encounterId)">
           Run the prepared encounter
         </button>

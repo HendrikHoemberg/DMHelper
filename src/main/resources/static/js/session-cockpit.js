@@ -56,6 +56,7 @@ function sessionCockpit(config) {
         _replacementPendingId: null,
         _replacementActiveId: null,
         _replacementActiveName: null,
+        _pendingRunEncounterId: null,
         _finishedEncounterId: null,
         finishedEncounterName: '',
         _readinessEncounterId: null,
@@ -87,6 +88,11 @@ function sessionCockpit(config) {
                 this.sessionStatus = state.status;
                 this.attendeeIds = state.attendeeIds || [];
                 this.lifecycleOpen = false;
+                const pending = this._pendingRunEncounterId;
+                if (pending) {
+                    window.location.href = `/campaigns/${this.campaignId}/session?runEncounter=${pending}`;
+                    return;
+                }
                 window.location.reload();
             } catch (error) {
                 window.reportActionFailure('Could not start the session.', error,
@@ -591,6 +597,10 @@ function sessionCockpit(config) {
         },
 
         async activateEncounter(encounterId, disposition) {
+            if (this.sessionStatus === 'IDLE') {
+                this.offerSessionStartForEncounter(encounterId);
+                return null;
+            }
             const body = disposition ? { activeEncounterDisposition: disposition } : {};
             const resp = await this.request(
                 `/api/v1/campaigns/${this.campaignId}/session/encounters/${encounterId}/activate`, {
@@ -643,6 +653,10 @@ function sessionCockpit(config) {
         },
 
         async runEncounter(encounterId) {
+            if (this.sessionStatus === 'IDLE') {
+                this.offerSessionStartForEncounter(encounterId);
+                return;
+            }
             try {
                 const encResponse = await this.request(`/api/v1/encounters/${encounterId}`);
                 const encounter = await encResponse.json();
@@ -667,6 +681,8 @@ function sessionCockpit(config) {
                     this.showReplacementDialog(problem.activeEncounterId, problem.activeEncounterName, encounterId);
                 } else if (problem.code === 'ENCOUNTER_NOT_READY') {
                     this.showReadinessDialog(problem.readiness, encounterId);
+                } else if (problem.code === 'SESSION_NOT_OPEN') {
+                    this.offerSessionStartForEncounter(encounterId);
                 } else {
                     throw e;
                 }
@@ -745,6 +761,10 @@ function sessionCockpit(config) {
             try {
                 await this.activateEncounter(encounterId, disposition);
             } catch (error) {
+                if (error?.problem?.code === 'SESSION_NOT_OPEN') {
+                    this.offerSessionStartForEncounter(encounterId);
+                    return;
+                }
                 const detail = error?.problem?.detail
                     || 'The encounter could not be started. Nothing was changed.';
                 window.cockpitLayout?.showNotice(detail);
@@ -784,8 +804,18 @@ function sessionCockpit(config) {
                     this.showReplacementDialog(problem.activeEncounterId, problem.activeEncounterName, encounterId);
                     return;
                 }
+                if (problem.code === 'SESSION_NOT_OPEN') {
+                    this.offerSessionStartForEncounter(encounterId);
+                    return;
+                }
                 throw e;
             }
+        },
+
+        offerSessionStartForEncounter(encounterId) {
+            this._pendingRunEncounterId = encounterId;
+            this.openLifecycle();
+            window.cockpitLayout?.showNotice('Start the session first. The encounter will run automatically once it is open.');
         },
 
         openEncounterSetup() {

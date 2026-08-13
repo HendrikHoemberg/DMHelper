@@ -7,6 +7,7 @@ import dev.hendrikhoemberg.dmhelper.encounter.data.EncounterRepository;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterPlacementService.EncounterReadinessDto;
 import dev.hendrikhoemberg.dmhelper.encounter.service.EncounterService;
+import dev.hendrikhoemberg.dmhelper.session.data.CampaignSession;
 import dev.hendrikhoemberg.dmhelper.session.data.CampaignSessionRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -57,6 +58,12 @@ public class SessionEncounterService {
             throw new EncounterNotReadyException(readiness);
         }
 
+        // The session must be open before any encounter transition happens, or the DM
+        // would have an activated encounter and no session to run it in.
+        CampaignSession session = sessions.findByCampaignId(campaignId)
+                .filter(CampaignSession::isOpen)
+                .orElseThrow(SessionNotOpenException::new);
+
         Encounter active = encounterRepo.findByCampaignIdAndStatus(campaignId, Encounter.Status.ACTIVE)
                 .filter(a -> !a.getId().equals(encounterId))
                 .orElse(null);
@@ -81,8 +88,6 @@ public class SessionEncounterService {
             case DONE -> encounterService.reopen(encounterId);
         };
 
-        var session = sessions.findByCampaignId(campaignId)
-                .orElseThrow(() -> new IllegalStateException("No active campaign session"));
         session.setWorkspaceMap(activated.getMap());
         sessions.save(session);
 

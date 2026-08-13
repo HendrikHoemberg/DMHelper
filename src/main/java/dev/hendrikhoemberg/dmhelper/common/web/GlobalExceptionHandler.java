@@ -3,6 +3,7 @@ package dev.hendrikhoemberg.dmhelper.common.web;
 import dev.hendrikhoemberg.dmhelper.common.NotFoundException;
 import dev.hendrikhoemberg.dmhelper.session.service.ActiveEncounterReplacementRequiredException;
 import dev.hendrikhoemberg.dmhelper.session.service.EncounterNotReadyException;
+import dev.hendrikhoemberg.dmhelper.session.service.SessionNotOpenException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,6 +99,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 request);
         problem.setProperty("code", "ENCOUNTER_NOT_READY");
         problem.setProperty("readiness", ex.getReadiness());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
+    }
+
+    @ExceptionHandler(SessionNotOpenException.class)
+    public Object handleSessionNotOpen(SessionNotOpenException ex, HttpServletRequest request) {
+        if ("true".equals(request.getHeader("HX-Request"))) {
+            return htmxError(HttpStatus.CONFLICT, ex.getMessage(), request);
+        }
+        if (prefersHtml(request)) {
+            return htmlErrorPage(HttpStatus.CONFLICT, request);
+        }
+        ProblemDetail problem = problem(
+                HttpStatus.CONFLICT,
+                "urn:dmhelper:session-not-open",
+                "Session Not Open",
+                ex.getMessage(),
+                request);
+        problem.setProperty("code", "SESSION_NOT_OPEN");
         return ResponseEntity.status(HttpStatus.CONFLICT).body(problem);
     }
 

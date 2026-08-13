@@ -108,6 +108,7 @@ class SessionEncounterServiceTest {
 
         when(encounterRepo.findById(encounterId)).thenReturn(Optional.of(encounter));
         when(placements.readiness(encounterId)).thenReturn(ready());
+        when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
         when(encounterRepo.findByCampaignIdAndStatus(campaignId, Encounter.Status.ACTIVE))
                 .thenReturn(Optional.of(active));
 
@@ -265,17 +266,37 @@ class SessionEncounterServiceTest {
     }
 
     @Test
-    void missingSessionThrowsIllegalState() {
+    void missingSessionThrowsSessionNotOpen() {
         when(encounterRepo.findById(encounterId)).thenReturn(Optional.of(encounter));
         when(placements.readiness(encounterId)).thenReturn(ready());
-        when(encounterRepo.findByCampaignIdAndStatus(campaignId, Encounter.Status.ACTIVE))
-                .thenReturn(Optional.empty());
-        when(encounterService.activateFresh(encounterId)).thenReturn(encounter);
         when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.activate(campaignId, encounterId, null))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("No active campaign session");
+                .isInstanceOf(SessionNotOpenException.class)
+                .hasMessageContaining("Start the session before running an encounter");
+
+        verify(encounterService, never()).activateFresh(any());
+        verify(encounterService, never()).resume(any());
+        verify(sessions, never()).save(any());
+    }
+
+    @Test
+    void idleSessionThrowsSessionNotOpenWithoutTransitioningTheEncounter() {
+        session.setStatus(CampaignSession.Status.IDLE);
+
+        when(encounterRepo.findById(encounterId)).thenReturn(Optional.of(encounter));
+        when(placements.readiness(encounterId)).thenReturn(ready());
+        when(sessions.findByCampaignId(campaignId)).thenReturn(Optional.of(session));
+
+        assertThatThrownBy(() -> service.activate(campaignId, encounterId, null))
+                .isInstanceOf(SessionNotOpenException.class);
+
+        verify(encounterService, never()).activateFresh(any());
+        verify(encounterService, never()).resume(any());
+        verify(encounterService, never()).reopen(any());
+        verify(encounterService, never()).suspend(any());
+        verify(encounterService, never()).endEncounter(any());
+        verify(sessions, never()).save(any());
     }
 
     @Test

@@ -9,6 +9,7 @@
   <div class="lifecycle-dialog__panel">
     <div x-show="sessionStatus === 'IDLE'">
       <h3 data-lifecycle-heading>Start Session</h3>
+      <p x-show="_pendingRunEncounterId">The encounter will run automatically once the session is open.</p>
       <p>Choose a starting map (optional):</p>
       <select x-model="startMapId" class="form-input">
         <option value="">No map</option>
